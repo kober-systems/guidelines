@@ -1,0 +1,396 @@
+Styleguide for Cpp Projects
+===========================
+
+image::../img/status-draft.svg[]
+
+== Version
+Version:: v0.1.0
+Status:: Draft
+Date:: 2025-05-30
+
+This guideline is created according to the
+https://github.com/kober-systems/guidelines/blob/main/published/guidelines_standard_v0-1-0.adoc["Guidelines
+Standard" v0.1.0].
+
+== Overview
+Best Practices to organize and structure code in cpp projects.
+
+=== Goals
+To have well-maintainable software projects and to facilitate
+collaboration with multiple people, best practices will be collected
+here that should be implemented in all C++ projects.
+
+== Requirements
+
+=== Modularization
+
+==== Create abstract classes as interfaces
+Wherever possible, Abstract classes SHOULD be created as interfaces.
+
+These abstract classes MUST only include headers of further abstract
+classes or headers defined in the C++ standard library (i.e., those
+that come with the compiler) in their headers. All other headers (e.g.,
+Arduino headers, headers from external libraries, or headers from
+derived classes) are explicitly not permitted.
+
+The name of an abstract class MUST start with `Abstract` (i.e., follow
+the schema `Abstract<name>`).
+
+Abstract classes SHOULD contain a virtual default destructor.
+
+Abstract classes MUST consist only of a header file. It is not allowed
+for them to also have a `.cpp` file.
+
+Abstract classes MUST NOT define private methods.
+
+Abstract classes MUST NOT define attributes.
+
+Abstract classes MUST define only `public` functions. These MUST be
+either virtual or inline (i.e., defined directly with a function body).
+
+////
+If the functions are not defined as pure virtual
+or inline, linker errors will occur. See
+https://stackoverflow.com/questions/29982704/undefined-reference-to-object-error
+////
+
+Abstract classes MUST NOT define a constructor.
+
+In the header file, additional classes or data
+structures CAN be defined, but only if they are either
+abstract classes themselves or simple data structures
+(https://en.wikipedia.org/wiki/Plain_old_data_structure[POD]).
+
+.Example
+[cols="a,a"]
+|===
+| Correct | Incorrect
+
+|
+[source, cpp]
+.AbstractLightShowController.h
+----
+#include "AbstractLightController.h" // <4>
+
+class AbstractLightShowController {
+public:
+  virtual ~AbstractLightShowController = default; // <5>
+
+  enum class result { // <1>
+    ok = 0;
+    busy = -1;
+    ...
+  };
+
+  virtual result start() = 0; // <2>
+  virtual result add_light(AbstractLightController* light) = 0; // <2> <3>
+ ...
+
+};
+----
+<1> Internal classes, enums, and functions can be defined as long as
+    they are also abstract.
+<2> The function names are general and have a high-level view of the
+    task. The names themselves do not reveal any information about the
+    internal implementation of the task.
+<3> Abstract classes (and not concrete implementations) are used as
+    parameters.
+<4> Headers of abstract classes can be imported.
+<5> Default destructor
+
+|
+[source, cpp]
+.AbstractLightShowController.h
+----
+#include <Arduino.h> // <1>
+#include <modbus_library.h> // <1>
+
+class AbstractLightShowController {
+public:
+  AbstractLightShowController(modbus_client cl); // <3>
+  virtual ~AbstractLightShowController = default;
+
+  void send_modbus_request(modbus_req req); // <4> <5>
+  virtual modbus_res recv_modbus_response() = 0; // <5>
+ ...
+
+private:
+  uint32_t state; // <2>
+  modbus_client mb_client; // <2>
+  void internal_process_modbus(); // <2>
+};
+----
+<1> Platform-dependent headers are not allowed.
+<2> Private attributes and/or functions are not allowed.
+<3> Constructor is not allowed.
+<4> Function is not marked as virtual.
+<5> Functions are not general enough and allow insight into the internal
+    functioning of the class. Furthermore, the functions use structures
+    that are not abstract as parameters or return values.
+
+[source, cpp]
+.AbstractLightShowController.cpp
+----
+... // <1>
+----
+<1> An abstract class is only allowed to have a header file, but not a
+`.cpp` file.
+
+|===
+
+===== Reasoning
+This strict use of abstract interfaces encourages stronger
+modularization of the software. This, in turn, promotes
+https://en.wikipedia.org/wiki/Information_hiding[information
+hiding], which in turn fosters
+https://en.wikipedia.org/wiki/Loose_coupling[low coupling] and
+https://en.wikipedia.org/wiki/Cohesion_(computer_science)[strong
+cohesion] (in other words, you don't have spaghetti code).
+
+This results in several benefits: The software becomes
+
+* easier to test (because you can easily derive test environments from
+  the abstract interfaces)
+* easier to port (the abstract interfaces themselves are compilable on
+  any system. Potential hardware-specific derivations are automatically
+  encapsulated and can therefore be easily exchanged)
+* more flexible (you can easily create an experimental new
+  implementation of an abstract interface and try it out. Since it is
+  not connected to everything and is easily exchangeable, the risk of
+  trying it out is significantly lower)
+* easier to understand (the strong modularization encourages taking
+  a high-level view at every level. This makes every layer easy to
+  understand on its own).
+
+==== Derived classes should inherit from abstract classes
+In the `main` or `setup` function, you will of course need concrete
+implementations. The classes used there SHOULD inherit from abstract
+classes.
+
+===== Reasoning
+The reasons are the same as for abstract classes themselves. Only by
+deriving classes from abstract classes wherever possible do the benefits
+of abstract classes become available.
+
+==== Derived classes should not have an init function
+Derived classes SHOULD NOT have an `init` function; instead, the class
+SHOULD be initialized directly in the constructor.
+
+===== Reasoning
+If you have a separate `init` function, there is a difference in
+calling the other functions of a class, depending on whether the class
+has already been initialized or not. To avoid errors, you must catch
+whether the class has already been initialized or not in each of these
+functions. This is error-prone and also requires constant runtime
+computation for the check.
+
+If you perform the initialization in the constructor, an uninitialized
+state cannot occur when using the class.
+
+==== Only include necessary headers
+In all headers, only the absolutely necessary headers MUST be included.
+All headers that are not required for compiling the header MUST NOT be
+included.
+
+This does not apply to headers that are implicitly included by other
+headers. In these cases, it is good to include them explicitly if the
+header is needed for compilation to make dependencies explicit.
+
+If a header is only needed for the implementation but not in the header,
+it MUST be moved to the source file (`*.cpp`).
+
+===== Reasoning
+Dependencies can quickly arise unintentionally because you use
+a function/class/etc. from a header. This makes it difficult to
+restructure the source code later because you suddenly have more
+dependencies than expected. By only including the absolutely necessary
+headers, you minimize dependencies.
+
+==== In derived classes, everything except the interface and constructor should be declared private
+In derived classes, all functions and attributes except the derived
+interface and the constructor SHOULD be declared `private`.
+
+In rare cases, it may happen that a function sensibly extends the
+derived interface without justifying its own abstract interface. In this
+case, you should make sure that the using classes and functions continue
+to use the abstract interface. If they become dependent on the extra
+function, it is a sign that you should extend the abstract interface or
+create a new abstract interface.
+
+===== Reasoning
+Dependencies can be reduced by declaring as much as possible as
+`private`. This encourages using the abstract interface and (if you
+reach limits) improving it, rather than building a solution that is
+difficult to port to new environments and difficult to restructure.
+
+==== Getter and setter functions should only be defined when necessary
+If you define getter or setter functions, there SHOULD be a concrete
+need for them in a using class or function.
+
+You should rather consider whether you cannot use a function with a
+specific action or pass a whole structure instead.
+
+===== Reasoning
+The actual use cases usually define an action rather than setting
+a single value. Getter and setter functions often require a larger
+context to validate sensibly. Therefore, they are often a sign that
+implementation details have not been abstracted sufficiently.
+
+Since they allow many more combinations than concrete functions with an
+action, they enable misuse of the API much more easily.
+
+==== Data structures should be passed by value, not by reference
+If you use data structures in a class and they can be queried or set,
+these MUST be passed by value and MUST NOT be passed by reference.
+
+===== Reasoning
+If you return an internal structure as a reference, the calling function
+or class gets access to the internal implementation details of the
+respective class and can manipulate them without using the API. This
+creates many invisible dependencies and makes it impossible to validate
+manipulations.
+
+==== Structures and enums should be defined in abstract classes
+If an abstract class uses data structures and/or enums that belong to
+the context of the abstract class footnote:[Structures or enums belong
+to the context of a class if they are used as parameters or return
+values of methods and have not been defined by another abstract class],
+these SHOULD be defined in the class declaration.
+
+Structures or enums in the context of an abstract class SHOULD NOT be
+defined directly in the global namespace. This also applies if you
+prefix them.
+
+.Example
+[cols="a,a"]
+|===
+| Correct | Incorrect
+
+|
+[source, cpp]
+.AbstractLightShowController.h
+----
+class AbstractLightShowController {
+public:
+  virtual ~AbstractLightShowController = default;
+
+  enum class result { // <1>
+    ok = 0;
+    busy = -1;
+    ...
+  };
+
+  typedef struct { // <1>
+    ...
+  } lightshow_pattern;
+
+  virtual result start() = 0; // <2>
+  virtual result lightshow_pattern_set(lightshow_pattern pattern) = 0; // <2>
+  ...
+
+};
+----
+<1> The enums and structures are defined within the class.
+<2> Structures and enums are considered to belong to the context of a
+    class if they are used as parameters or return values.
+
+[source, cpp]
+.ConcreteLightShowController.h
+----
+#include "AbstractLightShowController.h"
+
+class ConcreteLightShowController: public AbstractLightShowController { // <1>
+public:
+  ...
+
+  result start(); // <1>
+  result lightshow_pattern_set(lightshow_pattern pattern); // <1>
+  ...
+}
+----
+<1> Derived classes can use the data types simply because they inherit
+    the namespace.
+
+[source, cpp]
+.ConcreteLightShowController.cpp
+----
+#include "ConcreteLightShowController.h"
+
+using result = AbstractLightShowController::result; // <1>
+using pattern = AbstractLightShowController::lightshow_pattern; // <1>
+
+...
+----
+<1> In the implementation,
+    https://en.cppreference.com/w/cpp/language/type_alias[type aliases]
+    can be used to have easily readable source code (you don't have to
+    specify the entire namespace every time).
+
+|
+[source, cpp]
+.AbstractLightShowController.h
+----
+...
+
+enum class controller_result { // <1>
+  ok = 0;
+  busy = -1;
+  ...
+};
+
+typedef struct { // <1>
+  ...
+} controller_lightshow_pattern;
+
+class AbstractLightShowController {
+public:
+  virtual ~AbstractLightShowController = default;
+
+  virtual controller_result start() = 0; // <2>
+  virtual controller_result lightshow_pattern_set(controller_lightshow_pattern pattern) = 0; // <2>
+  ...
+
+};
+----
+<1> Structures and enums should not be defined in the global namespace
+    (even with a prefix).
+<2> By using prefixes, the function definitions become unnecessarily
+    long and unreadable.
+
+|===
+
+===== Reasoning
+Defining data types within the class declaration helps avoid collisions
+in the namespaces, making compilation easier. Additionally, the
+names are shorter, which contributes to better readability and
+understandability of the source code.
+
+=== General
+
+==== Use UTF-8 encoding
+In the source code, UTF-8 MUST be used as the encoding. Editors and IDEs
+must be configured accordingly.
+
+===== Reasoning
+In some cases, we need special characters in the source code (e.g., for
+i18n strings). In this case, Unicode is the only standardized way to
+cover all current and future languages.
+
+UTF-8 is a very widely used encoding that is supported on all modern
+systems and is close to the normal ASCII code in terms of space
+consumption.
+
+==== Use spaces instead of tabs
+In the source code, spaces MUST be used for formatting instead of tabs.
+Editors and IDEs must be configured accordingly.
+
+===== Reasoning
+If you use tabs, the formatting can be completely messed up on different
+systems, since the tab width can vary on different systems. Although
+the tab width can be configured in editors, the source code can be very
+difficult to read in the default setting. With spaces, the original
+formatting is preserved when reading, even if the corresponding editor
+or viewer has a different tab width configured.
+
+== Possible Problems
+
