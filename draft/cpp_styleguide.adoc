@@ -365,6 +365,18 @@ in the namespaces, making compilation easier. Additionally, the
 names are shorter, which contributes to better readability and
 understandability of the source code.
 
+==== Don't use global variables
+The code MUST NOT define nor use any global variables.
+
+An exception to this is in the file where the `main` or `setup` function
+is defined. Here a global variable MAY be defined and used. However all
+other code defined in other files MUST NOT use those global variables.
+
+===== Reasoning
+The usage of global variables creates invisible coupling between
+otherwise unconnected parts of the code. The more it is used the more
+unmaintainable becomes a codebase.
+
 === General
 
 ==== Use UTF-8 encoding
