@@ -32,8 +32,8 @@ jobs:
       - name: Asciidoc to html
         run: |
           npm i asciidoctor
-          cd guidelines
           ls -la
+          cd guidelines
           cp -R published _site
           asciidoctor _site/**.adoc
       - name: Upload artifact
