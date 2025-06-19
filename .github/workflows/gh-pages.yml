@@ -32,8 +32,8 @@ jobs:
       - name: Asciidoc to html
         uses: Serdaro/asciidoc-to-html@v1.0.0
         with:
-          src: ./
-          dest: ./_site
+          src: ../../.
+          dest: ../../_site
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 
