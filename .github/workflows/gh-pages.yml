@@ -33,6 +33,7 @@ jobs:
         run: |
           npm i asciidoctor
           cd ../..
+          ls -la
           cp -R published _site
           asciidoctor _site/**.adoc
       - name: Upload artifact
