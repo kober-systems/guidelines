@@ -32,7 +32,7 @@ jobs:
       - name: Asciidoc to html
         run: |
           npm i asciidoctor
-          cd ../..
+          cd guidelines
           ls -la
           cp -R published _site
           asciidoctor _site/**.adoc
