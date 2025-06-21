@@ -60,7 +60,7 @@ fn check_abstract_class(fields: &Node, code: &str, class_name: &str) -> Vec<Stri
         }
       }
       "field_declaration" => errors.append(&mut check_function_is_virtual(&child, code, class_name)),
-      "type_identifier"|"class"|";"|"{"|"}"|"("|")"|":" => (),
+      "type_identifier"|"class"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
       _ => errors.push(child.to_sexp()),
     }
   }

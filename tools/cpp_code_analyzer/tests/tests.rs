@@ -6,6 +6,7 @@ fn abstract_class_happy_path() {
     let code = r#"
 class AbstractMyClass {
 public:
+    // provides foo service to the class
     virtual void foo() = 0;
 };
 "#;
