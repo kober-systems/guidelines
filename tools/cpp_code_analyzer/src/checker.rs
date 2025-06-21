@@ -80,8 +80,9 @@ fn check_function_is_virtual(field: &Node, code: &str, class_name: &str) -> Vec<
         errors.push(format!("Abstract class `{class_name}` must not have attributes ('{}')", field));
         return errors;
       }
+      "function_declarator" => errors.append(&mut prohibit_init_function(&child, code, &class_name)),
       ";"|"{"|"}"|"("|")"|":"|"=" => (),
-      "virtual"|"primitive_type"|"function_declarator" => (),
+      "virtual"|"primitive_type" => (),
       "number_literal" => (),
       _ => errors.push(child.to_sexp()),
     }
@@ -114,6 +115,29 @@ fn check_function_is_virtual(field: &Node, code: &str, class_name: &str) -> Vec<
     if missing_pure_virtual {
       let range = field.byte_range();
       errors.push(format!("Abstract class '{class_name}': missing `= 0;` for method '{}'", code[range.start..range.end].to_string()));
+    }
+  }
+
+  errors
+}
+
+fn prohibit_init_function(field: &Node, code: &str, class_name: &str) -> Vec<String> {
+  let mut errors = vec![];
+
+  for idx in 0..field.child_count() {
+    let child = field.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      "field_identifier" => {
+        let field = &code[range.start..range.end];
+        if field == "init" {
+          errors.push(format!("Abstract class '{class_name}' should not provide an init function. Initialisation should be done in constructor."));
+        }
+      }
+      ";"|"{"|"}"|"("|")"|":"|"=" => (),
+      "virtual"|"primitive_type"|"parameter_list" => (),
+      "number_literal" => (),
+      _ => errors.push(child.to_sexp()),
     }
   }
 

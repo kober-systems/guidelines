@@ -64,3 +64,16 @@ public:
     ]);
 }
 
+#[test]
+fn should_not_permit_init_function() {
+    let code = r#"
+class AbstractMyClass {
+public:
+    virtual void init() = 0;
+};
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, [
+      "Abstract class 'AbstractMyClass' should not provide an init function. Initialisation should be done in constructor."
+    ]);
+}
