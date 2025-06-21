@@ -4,6 +4,7 @@ use pretty_assertions::assert_eq;
 #[test]
 fn abstract_class_happy_path() {
     let code = r#"
+// Provides some service
 class AbstractMyClass {
 public:
     // provides foo service to the class
