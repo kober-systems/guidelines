@@ -7,12 +7,19 @@ pub fn analyze_cpp(input: &str) -> Vec<String> {
   let tree = parser.parse(input, None).unwrap();
   let root_node = tree.root_node();
 
+  check_global_codechunk(&root_node, input)
+}
+
+fn check_global_codechunk(cl: &Node, code: &str) -> Vec<String> {
   let mut errors = vec![];
 
-  for idx in 0..root_node.child_count() {
-    let child = root_node.child(idx).unwrap();
+  for idx in 0..cl.child_count() {
+    let child = cl.child(idx).unwrap();
     match child.kind() {
-      "class_specifier" => errors.append(&mut check_class(&child, input)),
+      "class_specifier" => errors.append(&mut check_class(&child, code)),
+      "preproc_ifdef"|"preproc_def" => errors.append(&mut check_global_codechunk(&child, code)),
+      "identifier" => (), // ignoring identifiers on global level
+      "comment"|"#ifndef"|"#define"|"#endif" => (),
       ";" => (),
       _ => errors.push(child.to_sexp()),
     }
