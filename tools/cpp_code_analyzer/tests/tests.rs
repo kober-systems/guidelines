@@ -12,7 +12,7 @@ public:
 };
 "#;
     let errors = analyze_cpp(code);
-    assert!(errors.is_empty());
+    assert_eq!(errors, Vec::<String>::new());
 }
 
 #[test]
