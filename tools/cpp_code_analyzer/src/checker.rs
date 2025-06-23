@@ -33,14 +33,26 @@ fn check_class(cl: &Node, code: &str) -> Vec<String> {
 
   let name = get_class_name(cl, code);
   let is_abstact = name.starts_with("Abstract");
+  let mut derived_from_interface = false;
 
   for idx in 0..cl.child_count() {
     let child = cl.child(idx).unwrap();
     match child.kind() {
-      "field_declaration_list" => errors.append(&mut check_abstract_class(&child, code, &name)),
+      "field_declaration_list" => if is_abstact {
+        errors.append(&mut check_abstract_class(&child, code, &name));
+      } else {
+        errors.append(&mut check_derived_class(&child, code, &name));
+      }
+      "base_class_clause" => {
+        derived_from_interface = true;
+      }
       "type_identifier"|"class"|";" => (),
       _ => errors.push(child.to_sexp()),
     }
+  }
+
+  if !is_abstact && !derived_from_interface {
+    errors.push(format!("Class {name} must be derived from abstract interface"));
   }
 
   errors
@@ -60,6 +72,26 @@ fn check_abstract_class(fields: &Node, code: &str, class_name: &str) -> Vec<Stri
         }
       }
       "field_declaration" => errors.append(&mut check_function_is_virtual(&child, code, class_name)),
+      "type_identifier"|"class"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
+      _ => errors.push(child.to_sexp()),
+    }
+  }
+
+  errors
+}
+
+fn check_derived_class(fields: &Node, code: &str, class_name: &str) -> Vec<String> {
+  let mut errors = vec![];
+
+  let mut access_specifier = "public";
+  for idx in 0..fields.child_count() {
+    let child = fields.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      "access_specifier" => {
+        access_specifier = &code[range.start..range.end];
+      }
+      "field_declaration" => errors.append(&mut check_function_is_not_virtual(&child, code, class_name, access_specifier)),
       "type_identifier"|"class"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
       _ => errors.push(child.to_sexp()),
     }
@@ -115,6 +147,33 @@ fn check_function_is_virtual(field: &Node, code: &str, class_name: &str) -> Vec<
     if missing_pure_virtual {
       let range = field.byte_range();
       errors.push(format!("Abstract class '{class_name}': missing `= 0;` for method '{}'", code[range.start..range.end].to_string()));
+    }
+  }
+
+  errors
+}
+
+fn check_function_is_not_virtual(field: &Node, code: &str, class_name: &str, access_specifier: &str) -> Vec<String> {
+  let mut errors = vec![];
+
+  for idx in 0..field.child_count() {
+    let child = field.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      "field_identifier" => {
+        if access_specifier != "private" {
+          let field = &code[range.start..range.end];
+          errors.push(format!("Derived class `{class_name}` must not have non private attributes ('{}')", field));
+        }
+      }
+      "function_declarator" => errors.append(&mut prohibit_init_function(&child, code, &class_name)),
+      ";"|"{"|"}"|"("|")"|":"|"=" => (),
+      "virtual" => {
+        errors.push(format!("Derived class `{class_name}` must not define virtual functions ('{}')", field));
+      }
+      "primitive_type" => (),
+      "number_literal" => (),
+      _ => errors.push(child.to_sexp()),
     }
   }
 
