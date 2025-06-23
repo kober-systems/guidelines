@@ -52,7 +52,7 @@ fn check_class(cl: &Node, code: &str) -> Vec<String> {
   }
 
   if !is_abstact && !derived_from_interface {
-    errors.push(format!("Class {name} must be derived from abstract interface"));
+    errors.push(format!("Class '{name}' must be derived from abstract interface"));
   }
 
   errors
