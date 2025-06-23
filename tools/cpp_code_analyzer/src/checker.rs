@@ -193,7 +193,7 @@ fn check_function_is_not_virtual(field: &Node, code: &str, class_name: &str, acc
       "field_identifier" => {
         if access_specifier != "private" {
           let field = &code[range.start..range.end];
-          errors.push(format!("Derived class `{class_name}` must not have non private attributes ('{}')", field));
+          errors.push(format!("Derived class '{class_name}' must not have non private attributes ('{}')", field));
         }
       }
       "function_declarator" => {

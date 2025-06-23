@@ -67,3 +67,19 @@ private:
     ]);
 }
 
+#[test]
+fn all_attributes_must_be_private() {
+    let code = r#"
+class MyClass: public AbstractMyInterface {
+public:
+    void foo();
+
+    int my_variable = 0;
+};
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, [
+      "Derived class 'MyClass' must not have non private attributes ('my_variable')",
+    ]);
+}
+
