@@ -44,6 +44,7 @@ fn check_class(cl: &Node, code: &str) -> Vec<String> {
         errors.append(&mut check_derived_class(&child, code, &name));
       }
       "base_class_clause" => {
+        errors.append(&mut check_derives(&child, code, &name));
         derived_from_interface = true;
       }
       "type_identifier"|"class"|";" => (),
@@ -93,6 +94,27 @@ fn check_derived_class(fields: &Node, code: &str, class_name: &str) -> Vec<Strin
       }
       "field_declaration" => errors.append(&mut check_function_is_not_virtual(&child, code, class_name, access_specifier)),
       "type_identifier"|"class"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
+      _ => errors.push(child.to_sexp()),
+    }
+  }
+
+  errors
+}
+
+fn check_derives(fields: &Node, code: &str, class_name: &str) -> Vec<String> {
+  let mut errors = vec![];
+
+  for idx in 0..fields.child_count() {
+    let child = fields.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      "access_specifier" => if &code[range.start..range.end] != "public" {
+        errors.push(format!("Class '{class_name}': Derives must always be public"));
+      }
+      "type_identifier" => if !code[range.start..range.end].starts_with("Abstract") {
+        errors.push(format!("Class '{class_name}': Derives must always be from abstract interfaces"));
+      }
+      "class"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
       _ => errors.push(child.to_sexp()),
     }
   }
