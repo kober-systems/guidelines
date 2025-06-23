@@ -24,8 +24,8 @@ public:
 };
 "#;
     let errors = analyze_cpp(code);
-    assert_eq!(errors, vec![
-      "Abstract class `AbstractMyClass` must not have attributes ('x')".to_string(),
+    assert_eq!(errors, [
+      "Abstract class `AbstractMyClass` must not have attributes ('x')",
     ]);
 }
 
@@ -41,9 +41,9 @@ private:
 };
 "#;
     let errors = analyze_cpp(code);
-    assert_eq!(errors, vec![
-      "Abstract class `AbstractMyClass` should ONLY define 'public' methods (not allowed private)".to_string(),
-      "Abstract class `AbstractMyClass` must not have attributes ('x')".to_string(),
+    assert_eq!(errors, [
+      "Abstract class `AbstractMyClass` should ONLY define 'public' methods (not allowed private)",
+      "Abstract class `AbstractMyClass` must not have attributes ('x')",
     ]);
 }
 
@@ -58,9 +58,9 @@ public:
 };
 "#;
     let errors = analyze_cpp(code);
-    assert_eq!(errors, vec![
-      "method 'void bar() = 0;' in abstract class 'AbstractMyClass' must be virtual".to_string(),
-      "Abstract class 'AbstractMyClass': missing `= 0;` for method 'virtual void baz();'".to_string(),
+    assert_eq!(errors, [
+      "method 'void bar() = 0;' in abstract class 'AbstractMyClass' must be virtual",
+      "Abstract class 'AbstractMyClass': missing `= 0;` for method 'virtual void baz();'",
     ]);
 }
 
