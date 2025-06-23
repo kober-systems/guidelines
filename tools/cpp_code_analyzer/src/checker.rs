@@ -148,11 +148,22 @@ fn check_function_is_virtual(field: &Node, code: &str, class_name: &str) -> Vec<
     let range = field.byte_range();
     errors.push(format!("method '{}' in abstract class '{class_name}' must be virtual", code[range.start..range.end].to_string()));
   }
+
+  if !check_pure_virtual_ending(&field, code) {
+    let range = field.byte_range();
+    errors.push(format!("Abstract class '{class_name}': missing `= 0;` for method '{}'", code[range.start..range.end].to_string()));
+  }
+
+  errors
+}
+
+fn check_pure_virtual_ending(field: &Node, code: &str) -> bool {
+  let mut missing_pure_virtual = false;
+
   let cnt = field.child_count();
   if cnt >= 3 {
     let child = field.child(cnt-1).unwrap();
     let range = child.byte_range();
-    let mut missing_pure_virtual = false;
     if code[range.start..range.end] != *";" {
       missing_pure_virtual = true;
     }
@@ -166,18 +177,15 @@ fn check_function_is_virtual(field: &Node, code: &str, class_name: &str) -> Vec<
     if code[range.start..range.end] != *"=" {
       missing_pure_virtual = true;
     }
-    if missing_pure_virtual {
-      let range = field.byte_range();
-      errors.push(format!("Abstract class '{class_name}': missing `= 0;` for method '{}'", code[range.start..range.end].to_string()));
-    }
   }
 
-  errors
+  !missing_pure_virtual
 }
 
 fn check_function_is_not_virtual(field: &Node, code: &str, class_name: &str, access_specifier: &str) -> Vec<String> {
   let mut errors = vec![];
 
+  let mut is_function = false;
   for idx in 0..field.child_count() {
     let child = field.child(idx).unwrap();
     let range = child.byte_range();
@@ -188,7 +196,10 @@ fn check_function_is_not_virtual(field: &Node, code: &str, class_name: &str, acc
           errors.push(format!("Derived class `{class_name}` must not have non private attributes ('{}')", field));
         }
       }
-      "function_declarator" => errors.append(&mut prohibit_init_function(&child, code, &class_name)),
+      "function_declarator" => {
+        is_function = true;
+        errors.append(&mut prohibit_init_function(&child, code, &class_name));
+      }
       ";"|"{"|"}"|"("|")"|":"|"=" => (),
       "virtual" => {
         errors.push(format!("Derived class `{class_name}` must not define virtual functions ('{}')", field));
@@ -197,6 +208,11 @@ fn check_function_is_not_virtual(field: &Node, code: &str, class_name: &str, acc
       "number_literal" => (),
       _ => errors.push(child.to_sexp()),
     }
+  }
+
+  if is_function && check_pure_virtual_ending(&field, code) {
+    let range = field.byte_range();
+    errors.push(format!("Derived class '{class_name}' method '{}' should not be pure virtual", code[range.start..range.end].to_string()));
   }
 
   errors
