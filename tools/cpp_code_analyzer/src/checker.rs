@@ -2,18 +2,22 @@ use tree_sitter::{Node, Parser};
 use crate::ast::{AST, Kind, Class, Variable, Function};
 
 pub fn analyze_cpp(input: &str) -> Vec<String> {
+  let ast = parse_cpp_chunc(input);
+
+  check_global_codechunk(ast)
+}
+
+pub fn parse_cpp_chunc(input: &str) -> Vec<AST> {
   let mut parser = Parser::new();
   parser.set_language(&tree_sitter_cpp::LANGUAGE.into()).expect("Error loading Cpp grammar");
 
   let tree = parser.parse(input, None).unwrap();
   let root_node = tree.root_node();
 
-  check_global_codechunk(&root_node, input)
+  parse_global_codechunk(&root_node, input)
 }
 
-fn check_global_codechunk(cl: &Node, code: &str) -> Vec<String> {
-  let ast = parse_global_codechunk(cl, code);
-
+fn check_global_codechunk(ast: Vec<AST>) -> Vec<String> {
   let mut errors = vec![];
   for node in ast.into_iter() {
     errors.append(&mut error_message_from_ast(&node));
