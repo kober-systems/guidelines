@@ -12,27 +12,36 @@ pub fn analyze_cpp(input: &str) -> Vec<String> {
 }
 
 fn check_global_codechunk(cl: &Node, code: &str) -> Vec<String> {
-  let mut errors = vec![];
+  let ast = parse_global_codechunk(cl, code);
 
-  for idx in 0..cl.child_count() {
-    let child = cl.child(idx).unwrap();
-    match child.kind() {
-      "class_specifier" => errors.append(&mut check_class(&child, code)),
-      "preproc_ifdef"|"preproc_def" => errors.append(&mut check_global_codechunk(&child, code)),
-      "identifier" => (), // ignoring identifiers on global level
-      "comment"|"#ifndef"|"#define"|"#endif" => (),
-      ";" => (),
-      _ => errors.push(child.to_sexp()),
-    }
+  let mut errors = vec![];
+  for node in ast.into_iter() {
+    errors.append(&mut error_message_from_ast(&node));
   }
 
   errors
 }
 
-fn check_class(cl: &Node, code: &str) -> Vec<String> {
-  let class = extract_class(cl, code);
+fn parse_global_codechunk(cl: &Node, code: &str) -> Vec<AST> {
+  let mut ast = vec![];
 
-  error_message_from_ast(&class)
+  for idx in 0..cl.child_count() {
+    let child = cl.child(idx).unwrap();
+    match child.kind() {
+      "class_specifier" => ast.push(extract_class(&child, code)),
+      "preproc_ifdef"|"preproc_def" => ast.append(&mut parse_global_codechunk(&child, code)),
+      "identifier" => (), // ignoring identifiers on global level
+      "comment"|"#ifndef"|"#define"|"#endif" => (),
+      ";" => (),
+      _ => ast.push(AST {
+        name: "".to_string(),
+        kind: Kind::Unhandled(child.to_sexp()),
+        children: vec![],
+      }),
+    }
+  }
+
+  ast
 }
 
 fn extract_class(cl: &Node, code: &str) -> AST {
@@ -104,7 +113,7 @@ fn check_derived_class(node: &AST, class_name: &str) -> Vec<String> {
       Kind::Function(fun) => errors.append(&mut check_function_is_not_virtual(&child, &fun, class_name)),
       Kind::LintError(msg) => errors.push(msg.clone()),
       Kind::Unhandled(element) => errors.push(element.clone()),
-      _ => todo!(),
+      _ => unreachable!(),
     }
   }
 
