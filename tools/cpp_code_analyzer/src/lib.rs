@@ -1,5 +1,10 @@
+pub mod parser;
 pub mod checker;
-
-pub use checker::analyze_cpp;
-
 pub mod ast;
+
+pub fn analyze_cpp(input: &str) -> Vec<String> {
+  let ast = parser::parse_cpp_chunc(input);
+
+  checker::check_global_codechunk(ast)
+}
+
