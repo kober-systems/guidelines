@@ -32,27 +32,7 @@ fn check_global_codechunk(cl: &Node, code: &str) -> Vec<String> {
 fn check_class(cl: &Node, code: &str) -> Vec<String> {
   let class = extract_class(cl, code);
 
-  let mut errors = vec![];
-
-  let name = &class.name;
-
-  match class.kind {
-    Kind::Class(ref cl) => {
-      if cl.is_abstract {
-        errors.append(&mut check_abstract_class(&class, &name));
-      } else {
-        errors.append(&mut check_derived_class(&class, &name));
-        if cl.derived_from.len() == 0 {
-          errors.push(format!("Class '{name}' must be derived from abstract interface"));
-        }
-      }
-      errors.append(&mut check_derives(&cl.derived_from, &name));
-    }
-    Kind::Unhandled(element) => errors.push(element),
-    _ => todo!()
-  }
-
-  errors
+  error_message_from_ast(&class)
 }
 
 fn extract_class(cl: &Node, code: &str) -> AST {
@@ -330,3 +310,25 @@ fn get_class_name(cl: &Node, code: &str) -> String {
   panic!("each class must have a name!")
 }
 
+fn error_message_from_ast(input: &AST) -> Vec<String> {
+  let mut errors = vec![];
+
+  let name = &input.name;
+  match &input.kind {
+    Kind::Class(ref cl) => {
+      if cl.is_abstract {
+        errors.append(&mut check_abstract_class(&input, &name));
+      } else {
+        errors.append(&mut check_derived_class(&input, &name));
+        if cl.derived_from.len() == 0 {
+          errors.push(format!("Class '{name}' must be derived from abstract interface"));
+        }
+      }
+      errors.append(&mut check_derives(&cl.derived_from, &name));
+    }
+    Kind::Unhandled(element) => errors.push(element.clone()),
+    _ => todo!()
+  }
+
+  errors
+}
