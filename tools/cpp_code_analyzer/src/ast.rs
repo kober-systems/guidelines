@@ -31,4 +31,5 @@ pub struct Function {
 
 pub struct LintError {
   pub message: String,
+  pub range: core::ops::Range<usize>,
 }
