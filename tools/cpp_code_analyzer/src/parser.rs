@@ -176,7 +176,7 @@ fn extract_class_field(field: &Node, code: &str, access_specifier: &str) -> AST 
     let child = field.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "field_identifier" => {
+      "field_identifier"|"pointer_declarator" => {
         name = code[range.start..range.end].to_string();
         kind = Kind::Variable(Variable {
           visibility: access_specifier.to_string(),

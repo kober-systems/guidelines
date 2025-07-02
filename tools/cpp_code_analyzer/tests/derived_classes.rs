@@ -10,6 +10,7 @@ public:
 
 private:
     int my_private_variable = 0;
+    AbstractUsedClass *handle = nullptr;
 };
 "#;
     let errors = analyze_cpp(code);
@@ -75,11 +76,13 @@ public:
     void foo();
 
     int my_variable = 0;
+    AbstractUsedClass *handle = nullptr;
 };
 "#;
     let errors = analyze_cpp(code);
     assert_eq!(errors, [
       "Derived class 'MyClass' must not have non private attributes ('my_variable')",
+      "Derived class 'MyClass' must not have non private attributes ('*handle')",
     ]);
 }
 
