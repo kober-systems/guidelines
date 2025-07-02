@@ -26,6 +26,7 @@ fn parse_global_codechunk(cl: &Node, code: &str) -> Vec<AST> {
         name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
         children: vec![],
+        dependencies: vec![],
         range: child.byte_range(),
       }),
     }
@@ -56,6 +57,7 @@ fn extract_class(cl: &Node, code: &str) -> AST {
         name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
         children: vec![],
+        dependencies: vec![],
         range: child.byte_range(),
       }),
     }
@@ -68,6 +70,7 @@ fn extract_class(cl: &Node, code: &str) -> AST {
       is_abstract,
     }),
     children,
+    dependencies: vec![],
     range: cl.byte_range(),
   }
 }
@@ -89,6 +92,7 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
         name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
         children: vec![],
+        dependencies: vec![],
         range,
       }),
     }
@@ -111,6 +115,7 @@ fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<String>,
           name: "".to_string(),
           kind: Kind::LintError(format!("Class '{class_name}': Derives must always be public")),
           children: vec![],
+          dependencies: vec![],
           range: child.byte_range(),
         });
       }
@@ -119,6 +124,7 @@ fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<String>,
         name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
         children: vec![],
+        dependencies: vec![],
         range: child.byte_range(),
       }),
     }
@@ -191,6 +197,7 @@ fn extract_class_field(field: &Node, code: &str, access_specifier: &str) -> AST 
         name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
         children: vec![],
+        dependencies: vec![],
         range: child.byte_range(),
       }),
     }
@@ -200,6 +207,7 @@ fn extract_class_field(field: &Node, code: &str, access_specifier: &str) -> AST 
     name,
     kind,
     children: errors,
+    dependencies: vec![],
     range: field.byte_range(),
   }
 }

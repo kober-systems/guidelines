@@ -2,6 +2,7 @@ pub struct AST {
   pub name: String,
   pub kind: Kind,
   pub children: Vec<AST>,
+  pub dependencies: Vec<AST>,
   pub range: core::ops::Range<usize>,
 }
 
