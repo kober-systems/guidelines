@@ -9,6 +9,7 @@ fn traverse_ifdefs() {
 
 class AbstractMyClass {
 public:
+    virtual ~AbstractMyClass() = default;
     virtual void foo() = 0;
 };
 

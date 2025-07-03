@@ -11,6 +11,7 @@ pub fn check_global_codechunk(ast: &Vec<AST>, code: &str) -> Vec<LintError> {
 
 fn check_abstract_class(node: &AST, class_name: &str, code: &str) -> Vec<LintError> {
   let mut errors = vec![];
+  let mut has_default_destructor = false;
 
   for child in node.children.iter() {
     match &child.kind {
@@ -26,13 +27,25 @@ fn check_abstract_class(node: &AST, class_name: &str, code: &str) -> Vec<LintErr
           range: child.range.clone(),
         });
       }
-      Kind::Function(fun) => errors.append(&mut check_function_is_virtual(&child, &fun, class_name, code)),
+      Kind::Function(fun) => {
+        if fun.is_virtual && child.name == format!("~{class_name}()") {
+          has_default_destructor = true;
+        }
+        errors.append(&mut check_function_is_virtual(&child, &fun, class_name, code));
+      },
       Kind::Unhandled(element) => errors.push(LintError {
         message: element.clone(),
         range: child.range.clone(),
       }),
       _ => todo!(),
     }
+  }
+
+  if !has_default_destructor {
+    errors.push(LintError {
+      message: format!("Abstract class '{class_name}' should provide a default destructor."),
+      range: node.range.clone(),
+    });
   }
 
   errors

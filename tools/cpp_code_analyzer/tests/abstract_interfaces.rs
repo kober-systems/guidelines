@@ -21,6 +21,7 @@ fn prevent_attributes_in_abstract_classes() {
     let code = r#"
 class AbstractMyClass {
 public:
+    virtual ~AbstractMyClass() = default;
     int x;
 };
 "#;
@@ -36,6 +37,8 @@ fn prevent_private_members_in_abstract_classes() {
     let code = r#"
 class AbstractMyClass {
 public:
+    virtual ~AbstractMyClass() = default;
+
     virtual void foo() = 0;
 private:
     int x;
@@ -53,6 +56,8 @@ fn make_sure_all_methods_are_virtual_in_abstract_classes() {
     let code = r#"
 class AbstractMyClass {
 public:
+    virtual ~AbstractMyClass() = default;
+
     virtual void foo() = 0;
     void bar() = 0;
     virtual void baz();
@@ -70,11 +75,26 @@ fn should_not_permit_init_function() {
     let code = r#"
 class AbstractMyClass {
 public:
+    virtual ~AbstractMyClass() = default;
     virtual void init() = 0;
 };
 "#;
     let errors = analyze_cpp(code);
     assert_eq!(errors, [
       "Abstract class 'AbstractMyClass' should not provide an init function. Initialisation should be done in constructor."
+    ]);
+}
+
+#[test]
+fn warn_if_default_destructor_does_not_exist() {
+    let code = r#"
+class AbstractMyClass {
+public:
+    virtual void foo() = 0;
+};
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, [
+      "Abstract class 'AbstractMyClass' should provide a default destructor."
     ]);
 }
