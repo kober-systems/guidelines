@@ -31,9 +31,12 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
       "identifier"|"namespace_identifier" => (), // ignoring identifiers on global level
       "template_declaration" => parse_global_codechunk(base, &child, code),
       "template_parameter_list" => (),
-      "comment"|"#ifndef"|"#define"|"#endif"|"preproc_arg"|"namespace"|"#if"|"preproc_defined"|"template" => (),
+      "comment"|"#ifndef"|"#define"|"#endif"|"preproc_arg"|"namespace"|"#if"|"preproc_defined"|"template"|"typedef" => (),
       ";"|"{"|"}"|"\n" => (),
       "enum_specifier" => base.children.push(parse_enum(&child, code)),
+      "type_definition" => parse_global_codechunk(base, &child, code),
+      "struct_specifier" => base.children.push(parse_struct(&child, code)),
+      "type_identifier" => (),
       _ => base.children.push(AST {
         name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
@@ -292,6 +295,36 @@ fn parse_enum(node: &Node, code: &str) -> AST {
         name = &code[range.start..range.end];
       }
       "enumerator_list"|"class"|";" => (),
+      _ => children.push(AST {
+        name: "".to_string(),
+        kind: Kind::Unhandled(child.to_sexp()),
+        children: vec![],
+        dependencies: vec![],
+        range: child.byte_range(),
+      }),
+    }
+  }
+
+  AST {
+    name: name.to_string(),
+    kind: Kind::Type,
+    children,
+    dependencies: vec![],
+    range: node.byte_range(),
+  }
+}
+
+fn parse_struct(node: &Node, code: &str) -> AST {
+  let mut children = vec![];
+  let mut name = "";
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    match child.kind() {
+      "type_identifier" => {
+        let range = child.byte_range();
+        name = &code[range.start..range.end];
+      }
       _ => children.push(AST {
         name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),

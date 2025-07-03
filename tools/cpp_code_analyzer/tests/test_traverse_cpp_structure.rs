@@ -72,6 +72,21 @@ enum class my_enum {
 }
 
 #[test]
+fn parse_global_structs() {
+    let code = r#"
+struct my_struct {
+  int x=42;
+};
+
+typedef struct my_struct2 {
+  int x=42;
+} my_struct2;
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+
+#[test]
 fn parse_preproc_args() {
     let code = r#"
 #define PREPROC_PARAM 20;
