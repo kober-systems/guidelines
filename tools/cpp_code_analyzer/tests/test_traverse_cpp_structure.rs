@@ -60,6 +60,18 @@ int glogal_function(int param1, float param2);
 }
 
 #[test]
+fn parse_global_enums() {
+    let code = r#"
+enum class my_enum {
+  variant_0,
+  variant_1 = 1000,
+};
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+
+#[test]
 fn parse_preproc_args() {
     let code = r#"
 #define PREPROC_PARAM 20;
