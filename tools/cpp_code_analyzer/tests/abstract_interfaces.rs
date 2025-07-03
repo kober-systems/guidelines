@@ -10,6 +10,8 @@ public:
     virtual ~AbstractMyClass() = default;
     // provides foo service to the class
     virtual void foo() = 0;
+    // provide some other interface
+    virtual AbstractHandle* get_handle() = 0;
 };
 "#;
     let errors = analyze_cpp(code);

@@ -222,12 +222,26 @@ fn extract_class_field(field: &Node, code: &str, access_specifier: &str) -> AST 
     let child = field.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "field_identifier"|"pointer_declarator" => {
+      "field_identifier" => {
         name = code[range.start..range.end].to_string();
         kind = Kind::Variable(Variable {
           visibility: access_specifier.to_string(),
           is_const: false,
         });
+      }
+      "pointer_declarator" => {
+        name = code[range.start..range.end].to_string();
+        if name.contains("(") {
+          kind = Kind::Function(Function {
+            visibility: access_specifier.to_string(),
+            is_virtual: check_pure_virtual(&field, code),
+          });
+        } else {
+          kind = Kind::Variable(Variable {
+            visibility: access_specifier.to_string(),
+            is_const: false,
+          });
+        }
       }
       "function_declarator" => {
         name = code[range.start..range.end].to_string();
