@@ -1,7 +1,7 @@
 use crate::ast::{AST, Kind, Class, Variable, Function};
 use tree_sitter::{Node, Parser};
 
-pub fn parse_cpp_chunc(name: &str, input: &str) -> Vec<AST> {
+pub fn parse_cpp_chunc(name: &str, input: &str) -> AST {
   let mut parser = Parser::new();
   parser.set_language(&tree_sitter_cpp::LANGUAGE.into()).expect("Error loading Cpp grammar");
 
@@ -16,7 +16,8 @@ pub fn parse_cpp_chunc(name: &str, input: &str) -> Vec<AST> {
     range: root_node.byte_range(),
   };
   parse_global_codechunk(&mut base, &root_node, input);
-  base.children
+
+  base
 }
 
 fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
@@ -24,7 +25,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
     let child = cl.child(idx).unwrap();
     match child.kind() {
       "class_specifier" => base.children.push(extract_class(&child, code)),
-      "preproc_ifdef"|"preproc_def" => { parse_global_codechunk(base, &child, code); },
+      "preproc_ifdef"|"preproc_def" => parse_global_codechunk(base, &child, code),
       "identifier" => (), // ignoring identifiers on global level
       "comment"|"#ifndef"|"#define"|"#endif" => (),
       ";" => (),

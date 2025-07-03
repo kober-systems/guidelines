@@ -9,7 +9,7 @@ pub fn analyze_cpp(input: &str) -> Vec<String> {
 pub fn analyze_cpp_errors(name: &str, input: &str) -> Vec<ast::LintError> {
   let ast = parser::parse_cpp_chunc(name, input);
 
-  checker::check_global_codechunk(&ast)
+  checker::check_global_codechunk(&vec![ast])
 }
 
 fn lints_to_strings(input: Vec<ast::LintError>) -> Vec<String> {

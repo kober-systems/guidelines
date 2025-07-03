@@ -149,6 +149,7 @@ fn error_message_from_ast(input: &AST) -> Vec<LintError> {
 
   let name = &input.name;
   match &input.kind {
+    Kind::File { content: _ } => errors.append(&mut check_global_codechunk(&input.children) ),
     Kind::Class(ref cl) => {
       if cl.is_abstract {
         errors.append(&mut check_abstract_class(&input, &name));
