@@ -8,21 +8,27 @@ pub fn parse_cpp_chunc(name: &str, input: &str) -> Vec<AST> {
   let tree = parser.parse(input, None).unwrap();
   let root_node = tree.root_node();
 
-  parse_global_codechunk(&root_node, input)
+  let mut base = AST {
+    name: name.to_string(),
+    kind: Kind::File { content: input.to_string() },
+    children: vec![],
+    dependencies: vec![],
+    range: root_node.byte_range(),
+  };
+  parse_global_codechunk(&mut base, &root_node, input);
+  base.children
 }
 
-fn parse_global_codechunk(cl: &Node, code: &str) -> Vec<AST> {
-  let mut ast = vec![];
-
+fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
   for idx in 0..cl.child_count() {
     let child = cl.child(idx).unwrap();
     match child.kind() {
-      "class_specifier" => ast.push(extract_class(&child, code)),
-      "preproc_ifdef"|"preproc_def" => ast.append(&mut parse_global_codechunk(&child, code)),
+      "class_specifier" => base.children.push(extract_class(&child, code)),
+      "preproc_ifdef"|"preproc_def" => { parse_global_codechunk(base, &child, code); },
       "identifier" => (), // ignoring identifiers on global level
       "comment"|"#ifndef"|"#define"|"#endif" => (),
       ";" => (),
-      _ => ast.push(AST {
+      _ => base.children.push(AST {
         name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
         children: vec![],
@@ -31,8 +37,6 @@ fn parse_global_codechunk(cl: &Node, code: &str) -> Vec<AST> {
       }),
     }
   }
-
-  ast
 }
 
 fn extract_class(cl: &Node, code: &str) -> AST {
