@@ -153,6 +153,7 @@ fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<String>,
     let range = child.byte_range();
     match child.kind() {
       "type_identifier" => derived_from.push(code[range.start..range.end].to_string()),
+      "template_type" => derived_from.push(code[range.start..range.end].to_string()),
       "access_specifier" => if &code[range.start..range.end] != "public" {
         errors.push(AST {
           name: "".to_string(),

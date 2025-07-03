@@ -87,3 +87,16 @@ public:
     ]);
 }
 
+#[test]
+fn can_derive_from_template_class() {
+    let code = r#"
+class MyClass: public AbstractMyInterface<int> {
+public:
+    MyClass();
+    void foo();
+};
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+
