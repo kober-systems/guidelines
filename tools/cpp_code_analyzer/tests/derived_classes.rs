@@ -6,6 +6,7 @@ fn derived_class_happy_path() {
     let code = r#"
 class MyClass: public AbstractMyInterface {
 public:
+    MyClass(int x, AbstractUsedClass *used);
     void foo();
 
 private:

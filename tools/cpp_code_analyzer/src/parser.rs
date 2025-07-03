@@ -123,7 +123,7 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
       "access_specifier" => {
         access_specifier = &code[range.start..range.end];
       }
-      "field_declaration" => children.push(extract_class_field(&child, code, access_specifier)),
+      "declaration"|"field_declaration" => children.push(extract_class_field(&child, code, access_specifier)),
       "function_definition" => children.push(extract_class_field(&child, code, access_specifier)),
       "type_identifier"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
       _ => children.push(AST {
