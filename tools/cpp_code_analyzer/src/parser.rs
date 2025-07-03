@@ -25,6 +25,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
     let child = cl.child(idx).unwrap();
     match child.kind() {
       "class_specifier" => base.children.push(extract_class(&child, code)),
+      "declaration" => base.children.push(extract_field_or_function(&child, code, "public")),
       "preproc_ifdef"|"preproc_def" => parse_global_codechunk(base, &child, code),
       "preproc_include" => base.dependencies.push(parse_include(&child, code)),
       "identifier" => (), // ignoring identifiers on global level
@@ -123,8 +124,8 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
       "access_specifier" => {
         access_specifier = &code[range.start..range.end];
       }
-      "declaration"|"field_declaration" => children.push(extract_class_field(&child, code, access_specifier)),
-      "function_definition" => children.push(extract_class_field(&child, code, access_specifier)),
+      "declaration"|"field_declaration" => children.push(extract_field_or_function(&child, code, access_specifier)),
+      "function_definition" => children.push(extract_field_or_function(&child, code, access_specifier)),
       "type_identifier"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
       _ => children.push(AST {
         name: "".to_string(),
@@ -213,7 +214,7 @@ fn check_is_destructor(node: &Node) -> bool {
   return false;
 }
 
-fn extract_class_field(field: &Node, code: &str, access_specifier: &str) -> AST {
+fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -> AST {
   let mut errors = vec![];
 
   let mut name = "".to_string();

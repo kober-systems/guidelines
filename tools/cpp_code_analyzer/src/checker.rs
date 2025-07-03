@@ -178,6 +178,7 @@ fn error_message_from_ast(input: &AST, code: &str) -> Vec<LintError> {
       }
       errors.append(&mut check_derives(&cl.derived_from, input));
     }
+    Kind::Function(_fun) => (),
     Kind::Unhandled(element) => errors.push(LintError {
       message: element.clone(),
       range: input.range.clone(),

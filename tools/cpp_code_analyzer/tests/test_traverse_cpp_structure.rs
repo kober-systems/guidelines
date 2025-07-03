@@ -18,3 +18,12 @@ public:
     let errors = analyze_cpp(code);
     assert_eq!(errors, Vec::<String>::new());
 }
+
+#[test]
+fn parse_global_functions() {
+    let code = r#"
+int glogal_function(int param1, float param2);
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
