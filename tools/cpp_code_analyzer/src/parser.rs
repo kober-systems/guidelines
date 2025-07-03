@@ -125,7 +125,7 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
       }
       "field_declaration" => children.push(extract_class_field(&child, code, access_specifier)),
       "function_definition" => children.push(extract_class_field(&child, code, access_specifier)),
-      "type_identifier"|"class"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
+      "type_identifier"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
       _ => children.push(AST {
         name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
