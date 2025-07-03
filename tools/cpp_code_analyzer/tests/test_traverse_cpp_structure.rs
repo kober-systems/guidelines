@@ -20,6 +20,23 @@ public:
 }
 
 #[test]
+fn traverse_namespaces() {
+    let code = r#"
+namespace mynamespace {
+
+class AbstractMyClass {
+public:
+    virtual ~AbstractMyClass() = default;
+    virtual void foo() = 0;
+};
+
+}
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+
+#[test]
 fn parse_global_functions() {
     let code = r#"
 int glogal_function(int param1, float param2);
