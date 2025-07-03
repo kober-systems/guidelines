@@ -257,6 +257,9 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
       }
       ";"|"{"|"}"|"("|")"|":"|"=" => (),
       "virtual"|"primitive_type"|"number_literal" => (),
+      "enum_specifier" => {
+        return parse_enum(&child, code);
+      }
       _ => errors.push(AST {
         name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),

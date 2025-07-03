@@ -6,6 +6,10 @@ fn abstract_class_happy_path() {
     let code = r#"
 // Provides some service
 class AbstractMyClass {
+  enum class EnumType {
+    a,
+    b,
+  };
 public:
     virtual ~AbstractMyClass() = default;
     // provides foo service to the class

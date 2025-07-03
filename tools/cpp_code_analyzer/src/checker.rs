@@ -33,6 +33,7 @@ fn check_abstract_class(node: &AST, class_name: &str, code: &str) -> Vec<LintErr
         }
         errors.append(&mut check_function_is_virtual(&child, &fun, class_name, code));
       },
+      Kind::Type => (),
       Kind::Unhandled(element) => errors.push(LintError {
         message: element.clone(),
         range: child.range.clone(),
