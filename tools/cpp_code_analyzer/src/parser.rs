@@ -124,6 +124,7 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
         access_specifier = &code[range.start..range.end];
       }
       "field_declaration" => children.push(extract_class_field(&child, code, access_specifier)),
+      "function_definition" => children.push(extract_class_field(&child, code, access_specifier)),
       "type_identifier"|"class"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
       _ => children.push(AST {
         name: "".to_string(),
@@ -170,38 +171,46 @@ fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<String>,
   (derived_from, errors)
 }
 
-fn check_pure_virtual_ending(field: &Node, code: &str) -> bool {
-  let mut missing_pure_virtual = false;
-
-  let cnt = field.child_count();
-  if cnt >= 3 {
-    let child = field.child(cnt-1).unwrap();
-    let range = child.byte_range();
-    if code[range.start..range.end] != *";" {
-      missing_pure_virtual = true;
-    }
-    let child = field.child(cnt-2).unwrap();
-    let range = child.byte_range();
-    if code[range.start..range.end] != *"0" {
-      missing_pure_virtual = true;
-    }
-    let child = field.child(cnt-3).unwrap();
-    let range = child.byte_range();
-    if code[range.start..range.end] != *"=" {
-      missing_pure_virtual = true;
-    }
-  }
-
-  !missing_pure_virtual
+fn check_pure_virtual_ending(code: &str) -> bool {
+  code.replace(" ", "").ends_with("=0;")
 }
 
 fn check_pure_virtual(field: &Node, code: &str) -> bool {
   let range = field.byte_range();
-  if !code[range.start..range.end].starts_with("virtual") {
+  let code = &code[range.start..range.end];
+  if !code.starts_with("virtual") {
     return false;
   }
 
-  check_pure_virtual_ending(field, code)
+  check_pure_virtual_ending(code) || is_default_destructor(field)
+}
+
+fn is_default_destructor(node: &Node) -> bool {
+  let mut is_destructor = false;
+  let mut is_default = false;
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    match child.kind() {
+      "function_declarator" => is_destructor = check_is_destructor(&child),
+      "default_method_clause" => is_default = true,
+      _ => (),
+    }
+  }
+
+  return is_destructor && is_default;
+}
+
+fn check_is_destructor(node: &Node) -> bool {
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    match child.kind() {
+      "destructor_name" => return true,
+      _ => (),
+    }
+  }
+
+  return false;
 }
 
 fn extract_class_field(field: &Node, code: &str, access_specifier: &str) -> AST {

@@ -7,6 +7,7 @@ fn abstract_class_happy_path() {
 // Provides some service
 class AbstractMyClass {
 public:
+    virtual ~AbstractMyClass() = default;
     // provides foo service to the class
     virtual void foo() = 0;
 };
