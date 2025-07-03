@@ -22,6 +22,9 @@ fn main() {
     let filepath = args.input.to_string_lossy();
     let errors = analyze_cpp_errors(&filepath, &input);
 
+    let writer = StandardStream::stderr(ColorChoice::Always);
+    let config = codespan_reporting::term::Config::default();
+
     let mut files = SimpleFiles::new();
     let file_id = files.add(&filepath, input);
 
@@ -31,9 +34,6 @@ fn main() {
           .with_labels(vec![
               Label::primary(file_id, error.range.start..error.range.end),
           ]);
-
-      let writer = StandardStream::stderr(ColorChoice::Always);
-      let config = codespan_reporting::term::Config::default();
 
       term::emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
     }
