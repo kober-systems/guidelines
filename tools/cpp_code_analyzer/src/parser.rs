@@ -29,7 +29,9 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
       "preproc_ifdef"|"preproc_def"|"namespace_definition"|"declaration_list"|"preproc_if" => parse_global_codechunk(base, &child, code),
       "preproc_include" => base.dependencies.push(parse_include(&child, code)),
       "identifier"|"namespace_identifier" => (), // ignoring identifiers on global level
-      "comment"|"#ifndef"|"#define"|"#endif"|"preproc_arg"|"namespace"|"#if"|"preproc_defined" => (),
+      "template_declaration" => parse_global_codechunk(base, &child, code),
+      "template_parameter_list" => (),
+      "comment"|"#ifndef"|"#define"|"#endif"|"preproc_arg"|"namespace"|"#if"|"preproc_defined"|"template" => (),
       ";"|"{"|"}"|"\n" => (),
       _ => base.children.push(AST {
         name: "".to_string(),
@@ -91,6 +93,7 @@ fn extract_class(cl: &Node, code: &str) -> AST {
         children.append(&mut errors);
       }
       "type_identifier"|"class"|";" => (),
+      "template_type" => (),
       _ => children.push(AST {
         name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
@@ -279,6 +282,9 @@ fn get_class_name(cl: &Node, code: &str) -> String {
     match child.kind() {
       "type_identifier" => {
         return code[range.start..range.end].to_string()
+      },
+      "template_type" => {
+        return get_class_name(&child, code)
       },
       _ => (),
     }

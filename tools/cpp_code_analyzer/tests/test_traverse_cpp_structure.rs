@@ -37,6 +37,20 @@ public:
 }
 
 #[test]
+fn traverse_templates() {
+    let code = r#"
+template <typename T>
+class AbstractMyClass<T> {
+public:
+    virtual ~AbstractMyClass() = default;
+    virtual T foo() = 0;
+};
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+
+#[test]
 fn parse_global_functions() {
     let code = r#"
 int glogal_function(int param1, float param2);
