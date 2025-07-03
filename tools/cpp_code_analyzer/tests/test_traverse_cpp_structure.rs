@@ -49,6 +49,10 @@ int glogal_function(int param1, float param2);
 fn parse_preproc_args() {
     let code = r#"
 #define PREPROC_PARAM 20;
+
+#if defined(PROPROC_CONDITION)
+#define PREPROC_PARAM2 42;
+#endif
 "#;
     let errors = analyze_cpp(code);
     assert_eq!(errors, Vec::<String>::new());

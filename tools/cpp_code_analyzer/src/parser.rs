@@ -26,11 +26,11 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
     match child.kind() {
       "class_specifier" => base.children.push(extract_class(&child, code)),
       "declaration" => base.children.push(extract_field_or_function(&child, code, "public")),
-      "preproc_ifdef"|"preproc_def"|"namespace_definition"|"declaration_list" => parse_global_codechunk(base, &child, code),
+      "preproc_ifdef"|"preproc_def"|"namespace_definition"|"declaration_list"|"preproc_if" => parse_global_codechunk(base, &child, code),
       "preproc_include" => base.dependencies.push(parse_include(&child, code)),
       "identifier"|"namespace_identifier" => (), // ignoring identifiers on global level
-      "comment"|"#ifndef"|"#define"|"#endif"|"preproc_arg"|"namespace" => (),
-      ";"|"{"|"}" => (),
+      "comment"|"#ifndef"|"#define"|"#endif"|"preproc_arg"|"namespace"|"#if"|"preproc_defined" => (),
+      ";"|"{"|"}"|"\n" => (),
       _ => base.children.push(AST {
         name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
