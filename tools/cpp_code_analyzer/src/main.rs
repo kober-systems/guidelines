@@ -19,10 +19,11 @@ fn main() {
     let args = Args::parse();
 
     let input = std::fs::read_to_string(&args.input).expect("Could not read input");
-    let errors = analyze_cpp_errors(&input);
+    let filepath = args.input.to_string_lossy();
+    let errors = analyze_cpp_errors(&filepath, &input);
 
     let mut files = SimpleFiles::new();
-    let file_id = files.add(args.input.to_string_lossy(), input);
+    let file_id = files.add(&filepath, input);
 
     for error in errors.iter() {
       let diagnostic = Diagnostic::error()

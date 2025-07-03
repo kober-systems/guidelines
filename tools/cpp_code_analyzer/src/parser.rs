@@ -1,7 +1,7 @@
 use crate::ast::{AST, Kind, Class, Variable, Function};
 use tree_sitter::{Node, Parser};
 
-pub fn parse_cpp_chunc(input: &str) -> Vec<AST> {
+pub fn parse_cpp_chunc(name: &str, input: &str) -> Vec<AST> {
   let mut parser = Parser::new();
   parser.set_language(&tree_sitter_cpp::LANGUAGE.into()).expect("Error loading Cpp grammar");
 
