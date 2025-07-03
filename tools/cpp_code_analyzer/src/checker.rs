@@ -58,7 +58,7 @@ fn check_derived_class(node: &AST, class_name: &str) -> Vec<LintError> {
   for child in node.children.iter() {
     match &child.kind {
       Kind::Variable(vl) => {
-        if vl.visibility != "private" {
+        if vl.visibility != "private" && node.instructions.iter().find(|inst| inst.ident == "E_MOD_01").iter().count() == 0 {
           errors.push(LintError {
             message: format!("Derived class '{class_name}' must not have non private attributes ('{}')", child.name),
             range: child.range.clone(),

@@ -4,6 +4,7 @@ pub struct AST {
   pub children: Vec<AST>,
   pub dependencies: Vec<AST>,
   pub range: core::ops::Range<usize>,
+  pub instructions: Vec<LintInstruction>,
 }
 
 pub enum Kind {
@@ -34,4 +35,9 @@ pub struct Function {
 pub struct LintError {
   pub message: String,
   pub range: core::ops::Range<usize>,
+}
+
+pub struct LintInstruction {
+  pub ident: String,
+  pub reason: String,
 }

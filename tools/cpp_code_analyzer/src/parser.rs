@@ -1,4 +1,4 @@
-use crate::ast::{AST, Kind, Class, Variable, Function};
+use crate::ast::{Class, Function, Kind, LintInstruction, Variable, AST};
 use tree_sitter::{Node, Parser};
 
 pub fn parse_cpp_chunc(name: &str, input: &str) -> AST {
@@ -13,6 +13,7 @@ pub fn parse_cpp_chunc(name: &str, input: &str) -> AST {
     kind: Kind::File { content: input.to_string() },
     children: vec![],
     dependencies: vec![],
+    instructions: vec![],
     range: root_node.byte_range(),
   };
   parse_global_codechunk(&mut base, &root_node, input);
@@ -42,6 +43,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
         kind: Kind::Unhandled(child.to_sexp()),
         children: vec![],
         dependencies: vec![],
+        instructions: vec![],
         range: child.byte_range(),
       }),
     }
@@ -65,6 +67,7 @@ fn parse_include(node: &Node, code: &str) -> AST {
         kind: Kind::Unhandled(child.to_sexp()),
         children: vec![],
         dependencies: vec![],
+        instructions: vec![],
         range: child.byte_range(),
       }),
     }
@@ -75,6 +78,7 @@ fn parse_include(node: &Node, code: &str) -> AST {
     kind: Kind::Reference,
     children,
     dependencies: vec![],
+    instructions: vec![],
     range: node.byte_range(),
   }
 }
@@ -84,6 +88,35 @@ fn extract_class(cl: &Node, code: &str) -> AST {
   let is_abstract = name.starts_with("Abstract");
   let mut dependencies = vec![];
   let mut children = vec![];
+  let mut instructions = vec![];
+
+  if let Some(before) = cl.prev_sibling() {
+    if before.kind() == "comment" {
+      let range = before.byte_range();
+      let previous_comment = &code[range.start..range.end];
+      let mut next_is_instruction = false;
+      const LINT_PATTERN: &str = "lint: ignore ";
+      for instruction in previous_comment.split_inclusive(LINT_PATTERN) {
+        if next_is_instruction {
+          match instruction.split_once(" ") {
+            Some((number, reason)) => instructions.push(LintInstruction {
+              ident: number.to_string(),
+              reason: reason.to_string(),
+            }),
+            None => children.push(AST {
+              name: "".to_string(),
+              kind: Kind::LintError(format!("could not parse lint instruction in comment: {previous_comment}")) ,
+              children: vec![],
+              dependencies: vec![],
+              instructions: vec![],
+              range: range.clone(),
+            })
+          }
+        }
+        next_is_instruction = instruction.ends_with(LINT_PATTERN);
+      }
+    }
+  }
 
   for idx in 0..cl.child_count() {
     let child = cl.child(idx).unwrap();
@@ -103,6 +136,7 @@ fn extract_class(cl: &Node, code: &str) -> AST {
         kind: Kind::Unhandled(child.to_sexp()),
         children: vec![],
         dependencies: vec![],
+        instructions: vec![],
         range: child.byte_range(),
       }),
     }
@@ -116,6 +150,7 @@ fn extract_class(cl: &Node, code: &str) -> AST {
     children,
     dependencies,
     range: cl.byte_range(),
+    instructions,
   }
 }
 
@@ -139,6 +174,7 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
         kind: Kind::Unhandled(child.to_sexp()),
         children: vec![],
         dependencies: vec![],
+        instructions: vec![],
         range,
       }),
     }
@@ -160,6 +196,7 @@ fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<AST>, Ve
         kind: Kind::Reference,
         children: vec![],
         dependencies: vec![],
+        instructions: vec![],
         range: child.byte_range(),
       }),
       "template_type" => derived_from.push(AST {
@@ -167,6 +204,7 @@ fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<AST>, Ve
         kind: Kind::Reference,
         children: vec![],
         dependencies: vec![],
+        instructions: vec![],
         range: child.byte_range(),
       }),
       "access_specifier" => if &code[range.start..range.end] != "public" {
@@ -175,6 +213,7 @@ fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<AST>, Ve
           kind: Kind::LintError(format!("Class '{class_name}': Derives must always be public")),
           children: vec![],
           dependencies: vec![],
+          instructions: vec![],
           range: child.byte_range(),
         });
       }
@@ -184,6 +223,7 @@ fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<AST>, Ve
         kind: Kind::Unhandled(child.to_sexp()),
         children: vec![],
         dependencies: vec![],
+        instructions: vec![],
         range: child.byte_range(),
       }),
     }
@@ -282,6 +322,7 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
         kind: Kind::Unhandled(child.to_sexp()),
         children: vec![],
         dependencies: vec![],
+        instructions: vec![],
         range: child.byte_range(),
       }),
     }
@@ -292,6 +333,7 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
     kind,
     children: errors,
     dependencies: vec![],
+    instructions: vec![],
     range: field.byte_range(),
   }
 }
@@ -313,6 +355,7 @@ fn parse_enum(node: &Node, code: &str) -> AST {
         kind: Kind::Unhandled(child.to_sexp()),
         children: vec![],
         dependencies: vec![],
+        instructions: vec![],
         range: child.byte_range(),
       }),
     }
@@ -323,6 +366,7 @@ fn parse_enum(node: &Node, code: &str) -> AST {
     kind: Kind::Type,
     children,
     dependencies: vec![],
+    instructions: vec![],
     range: node.byte_range(),
   }
 }
@@ -343,6 +387,7 @@ fn parse_struct(node: &Node, code: &str) -> AST {
         kind: Kind::Unhandled(child.to_sexp()),
         children: vec![],
         dependencies: vec![],
+        instructions: vec![],
         range: child.byte_range(),
       }),
     }
@@ -353,6 +398,7 @@ fn parse_struct(node: &Node, code: &str) -> AST {
     kind: Kind::Type,
     children,
     dependencies: vec![],
+    instructions: vec![],
     range: node.byte_range(),
   }
 }

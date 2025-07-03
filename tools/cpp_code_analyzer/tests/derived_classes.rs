@@ -88,6 +88,22 @@ public:
 }
 
 #[test]
+fn can_explicitly_allow_public_attributes() {
+    let code = r#"
+// lint: ignore E_MOD_01 reason: only used in testing scenarios
+class MyClass: public AbstractMyInterface {
+public:
+    void foo();
+
+    int my_variable = 0;
+    AbstractUsedClass *handle = nullptr;
+};
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+
+#[test]
 fn can_derive_from_template_class() {
     let code = r#"
 class MyClass: public AbstractMyInterface<int> {
