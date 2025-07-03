@@ -29,7 +29,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
       "preproc_ifdef"|"preproc_def" => parse_global_codechunk(base, &child, code),
       "preproc_include" => base.dependencies.push(parse_include(&child, code)),
       "identifier" => (), // ignoring identifiers on global level
-      "comment"|"#ifndef"|"#define"|"#endif" => (),
+      "comment"|"#ifndef"|"#define"|"#endif"|"preproc_arg" => (),
       ";" => (),
       _ => base.children.push(AST {
         name: "".to_string(),
