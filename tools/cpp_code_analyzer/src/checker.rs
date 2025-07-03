@@ -1,6 +1,6 @@
 use crate::ast::{AST, Kind, Function, LintError};
 
-pub fn check_global_codechunk(ast: Vec<AST>) -> Vec<LintError> {
+pub fn check_global_codechunk(ast: &Vec<AST>) -> Vec<LintError> {
   let mut errors = vec![];
   for node in ast.into_iter() {
     errors.append(&mut error_message_from_ast(&node));
