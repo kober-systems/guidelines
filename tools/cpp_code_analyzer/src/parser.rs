@@ -230,7 +230,6 @@ fn extract_class_field(field: &Node, code: &str, access_specifier: &str) -> AST 
         });
       }
       "function_declarator" => {
-        let range = field.byte_range();
         name = code[range.start..range.end].to_string();
         kind = Kind::Function(Function {
           visibility: access_specifier.to_string(),

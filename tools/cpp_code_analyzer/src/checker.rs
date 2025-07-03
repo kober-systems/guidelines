@@ -1,15 +1,15 @@
 use crate::ast::{AST, Kind, Function, LintError};
 
-pub fn check_global_codechunk(ast: &Vec<AST>) -> Vec<LintError> {
+pub fn check_global_codechunk(ast: &Vec<AST>, code: &str) -> Vec<LintError> {
   let mut errors = vec![];
   for node in ast.into_iter() {
-    errors.append(&mut error_message_from_ast(&node));
+    errors.append(&mut error_message_from_ast(&node, code));
   }
 
   errors
 }
 
-fn check_abstract_class(node: &AST, class_name: &str) -> Vec<LintError> {
+fn check_abstract_class(node: &AST, class_name: &str, code: &str) -> Vec<LintError> {
   let mut errors = vec![];
 
   for child in node.children.iter() {
@@ -26,7 +26,7 @@ fn check_abstract_class(node: &AST, class_name: &str) -> Vec<LintError> {
           range: child.range.clone(),
         });
       }
-      Kind::Function(fun) => errors.append(&mut check_function_is_virtual(&child, &fun, class_name)),
+      Kind::Function(fun) => errors.append(&mut check_function_is_virtual(&child, &fun, class_name, code)),
       Kind::Unhandled(element) => errors.push(LintError {
         message: element.clone(),
         range: child.range.clone(),
@@ -83,22 +83,23 @@ fn check_derives(derived_from: &Vec<String>, class: &AST) -> Vec<LintError> {
   errors
 }
 
-fn check_function_is_virtual(field: &AST, fun: &Function, class_name: &str) -> Vec<LintError> {
+fn check_function_is_virtual(field: &AST, fun: &Function, class_name: &str, code: &str) -> Vec<LintError> {
   let mut errors = vec![];
 
   errors.append(&mut prohibit_init_function(field, class_name));
 
+  let function_code = code[field.range.start..field.range.end].to_string();
   if !fun.is_virtual {
-    if !field.name.starts_with("virtual") {
+    if !function_code.starts_with("virtual") {
       errors.push(LintError {
-        message: format!("method '{}' in abstract class '{class_name}' must be virtual", field.name),
+        message: format!("method '{function_code}' in abstract class '{class_name}' must be virtual"),
         range: field.range.clone(),
       });
     }
 
-    if !field.name.replace(" ", "").ends_with("=0;") {
+    if !function_code.replace(" ", "").ends_with("=0;") {
       errors.push(LintError {
-        message: format!("Abstract class '{class_name}': missing `= 0;` for method '{}'", field.name),
+        message: format!("Abstract class '{class_name}': missing `= 0;` for method '{function_code}'"),
         range: field.range.clone(),
       });
     }
@@ -144,15 +145,15 @@ fn prohibit_init_function(field: &AST, class_name: &str) -> Vec<LintError> {
   errors
 }
 
-fn error_message_from_ast(input: &AST) -> Vec<LintError> {
+fn error_message_from_ast(input: &AST, code: &str) -> Vec<LintError> {
   let mut errors = vec![];
 
   let name = &input.name;
   match &input.kind {
-    Kind::File { content: _ } => errors.append(&mut check_global_codechunk(&input.children) ),
+    Kind::File { content } => errors.append(&mut check_global_codechunk(&input.children, &content)),
     Kind::Class(ref cl) => {
       if cl.is_abstract {
-        errors.append(&mut check_abstract_class(&input, &name));
+        errors.append(&mut check_abstract_class(&input, &name, code));
       } else {
         errors.append(&mut check_derived_class(&input, &name));
         if cl.derived_from.len() == 0 {
