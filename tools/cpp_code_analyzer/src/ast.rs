@@ -11,6 +11,7 @@ pub enum Kind {
   Class(Class),
   Function(Function),
   Variable(Variable),
+  Reference,
   Unhandled(String),
   LintError(String),
 }

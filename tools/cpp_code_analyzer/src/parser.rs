@@ -26,6 +26,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
     match child.kind() {
       "class_specifier" => base.children.push(extract_class(&child, code)),
       "preproc_ifdef"|"preproc_def" => parse_global_codechunk(base, &child, code),
+      "preproc_include" => base.dependencies.push(parse_include(&child, code)),
       "identifier" => (), // ignoring identifiers on global level
       "comment"|"#ifndef"|"#define"|"#endif" => (),
       ";" => (),
@@ -37,6 +38,37 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
         range: child.byte_range(),
       }),
     }
+  }
+}
+
+fn parse_include(node: &Node, code: &str) -> AST {
+  let mut children = vec![];
+  let mut name = "";
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    match child.kind() {
+      "string_literal"|"system_lib_string" => {
+        let range = child.byte_range();
+        name = &code[range.start..range.end];
+      }
+      "type_identifier"|"class"|";" => (),
+      _ => children.push(AST {
+        name: "".to_string(),
+        kind: Kind::Unhandled(child.to_sexp()),
+        children: vec![],
+        dependencies: vec![],
+        range: child.byte_range(),
+      }),
+    }
+  }
+
+  AST {
+    name: name.to_string(),
+    kind: Kind::Reference,
+    children,
+    dependencies: vec![],
+    range: node.byte_range(),
   }
 }
 
