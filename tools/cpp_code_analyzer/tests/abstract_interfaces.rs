@@ -10,6 +10,9 @@ class AbstractMyClass {
     a,
     b,
   };
+  typedef struct StructType {
+    int x=0;
+  } StructType;
 public:
     virtual ~AbstractMyClass() = default;
     // provides foo service to the class
