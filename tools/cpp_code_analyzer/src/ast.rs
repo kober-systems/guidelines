@@ -18,7 +18,6 @@ pub enum Kind {
 }
 
 pub struct Class {
-  pub derived_from: Vec<String>,
   pub is_abstract: bool,
 }
 

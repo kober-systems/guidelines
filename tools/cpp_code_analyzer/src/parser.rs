@@ -82,7 +82,7 @@ fn parse_include(node: &Node, code: &str) -> AST {
 fn extract_class(cl: &Node, code: &str) -> AST {
   let name = get_class_name(cl, code);
   let is_abstract = name.starts_with("Abstract");
-  let mut derived_from = vec![];
+  let mut dependencies = vec![];
   let mut children = vec![];
 
   for idx in 0..cl.child_count() {
@@ -93,7 +93,7 @@ fn extract_class(cl: &Node, code: &str) -> AST {
       }
       "base_class_clause" => {
         let (mut derived, mut errors) = extract_derives(&child, code, &name);
-        derived_from.append(&mut derived);
+        dependencies.append(&mut derived);
         children.append(&mut errors);
       }
       "type_identifier"|"class"|";" => (),
@@ -111,11 +111,10 @@ fn extract_class(cl: &Node, code: &str) -> AST {
   AST {
     name,
     kind: Kind::Class(Class {
-      derived_from,
       is_abstract,
     }),
     children,
-    dependencies: vec![],
+    dependencies,
     range: cl.byte_range(),
   }
 }
@@ -148,7 +147,7 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
   children
 }
 
-fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<String>, Vec<AST>) {
+fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<AST>, Vec<AST>) {
   let mut derived_from = vec![];
   let mut errors = vec![];
 
@@ -156,8 +155,20 @@ fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<String>,
     let child = fields.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "type_identifier" => derived_from.push(code[range.start..range.end].to_string()),
-      "template_type" => derived_from.push(code[range.start..range.end].to_string()),
+      "type_identifier" => derived_from.push(AST {
+        name: code[range.start..range.end].to_string(),
+        kind: Kind::Reference,
+        children: vec![],
+        dependencies: vec![],
+        range: child.byte_range(),
+      }),
+      "template_type" => derived_from.push(AST {
+        name: code[range.start..range.end].to_string(),
+        kind: Kind::Reference,
+        children: vec![],
+        dependencies: vec![],
+        range: child.byte_range(),
+      }),
       "access_specifier" => if &code[range.start..range.end] != "public" {
         errors.push(AST {
           name: "".to_string(),

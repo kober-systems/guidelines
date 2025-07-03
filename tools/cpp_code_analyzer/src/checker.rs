@@ -81,12 +81,12 @@ fn check_derived_class(node: &AST, class_name: &str) -> Vec<LintError> {
   errors
 }
 
-fn check_derives(derived_from: &Vec<String>, class: &AST) -> Vec<LintError> {
+fn check_derives(class: &AST) -> Vec<LintError> {
   let mut errors = vec![];
 
   let class_name = &class.name;
-  for derived_from in derived_from.iter() {
-    if !derived_from.starts_with("Abstract") {
+  for derived_from in class.dependencies.iter() {
+    if !derived_from.name.starts_with("Abstract") {
       errors.push(LintError {
         message: format!("Class '{class_name}': Derives must always be from abstract interfaces"),
         range: class.range.clone(),
@@ -170,14 +170,14 @@ fn error_message_from_ast(input: &AST, code: &str) -> Vec<LintError> {
         errors.append(&mut check_abstract_class(&input, &name, code));
       } else {
         errors.append(&mut check_derived_class(&input, &name));
-        if cl.derived_from.len() == 0 {
+        if input.dependencies.len() == 0 {
           errors.push(LintError {
             message: format!("Class '{name}' must be derived from abstract interface"),
             range: input.range.clone(),
           });
         }
       }
-      errors.append(&mut check_derives(&cl.derived_from, input));
+      errors.append(&mut check_derives(input));
     }
     Kind::Function(_fun) => (),
     Kind::Type => (),
