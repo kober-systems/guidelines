@@ -238,18 +238,19 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
   let mut errors = vec![];
 
   let mut name = "".to_string();
-  let mut kind = Kind::Unhandled(field.to_sexp());
+  let mut kind = Kind::Unhandled(format!("extract_field_or_function: {}", field.to_sexp()));
   for idx in 0..field.child_count() {
     let child = field.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "field_identifier" => {
+      "field_identifier"|"identifier" => {
         name = code[range.start..range.end].to_string();
         kind = Kind::Variable(Variable {
           visibility: access_specifier.to_string(),
           is_const: false,
         });
       }
+      "init_declarator" => { return extract_field_or_function(&child, code, access_specifier) },
       "pointer_declarator" => {
         name = code[range.start..range.end].to_string();
         if name.contains("(") {

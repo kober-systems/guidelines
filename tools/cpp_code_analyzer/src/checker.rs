@@ -181,6 +181,10 @@ fn error_message_from_ast(input: &AST, code: &str) -> Vec<LintError> {
     }
     Kind::Function(_fun) => (),
     Kind::Type => (),
+    Kind::Variable(_) => errors.push(LintError {
+      message: format!("It's not allowed to create global variables ('{}'). Global variables create invisible coupling.", input.name),
+      range: input.range.clone(),
+    }),
     Kind::Unhandled(element) => errors.push(LintError {
       message: element.clone(),
       range: input.range.clone(),
