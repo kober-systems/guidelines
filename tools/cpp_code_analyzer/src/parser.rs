@@ -281,6 +281,7 @@ fn check_is_destructor(node: &Node) -> bool {
 fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -> AST {
   let mut errors = vec![];
 
+  let mut parsed_element: Option<AST> = None;
   let mut name = "".to_string();
   let mut kind = Kind::Unhandled(format!("extract_field_or_function: {}", field.to_sexp()));
   for idx in 0..field.child_count() {
@@ -294,7 +295,9 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
           is_const: check_is_const(&field.parent().unwrap(), code),
         });
       }
-      "init_declarator" => { return extract_field_or_function(&child, code, access_specifier) },
+      "init_declarator" => {
+        parsed_element = Some(extract_field_or_function(&child, code, access_specifier))
+      },
       "pointer_declarator" => {
         name = code[range.start..range.end].to_string();
         if name.contains("(") {
@@ -320,7 +323,7 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
       "virtual"|"primitive_type"|"number_literal"
         |"type_qualifier" => (),
       "enum_specifier" => {
-        return parse_enum(&child, code);
+        parsed_element = Some(parse_enum(&child, code));
       }
       _ => errors.push(AST {
         name: "".to_string(),
@@ -333,6 +336,11 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
     }
   }
 
+  if let Some(mut ast) = parsed_element {
+    errors.append(&mut ast.children);
+    name = ast.name;
+    kind = ast.kind;
+  }
   AST {
     name,
     kind,
