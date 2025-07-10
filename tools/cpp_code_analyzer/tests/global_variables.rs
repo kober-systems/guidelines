@@ -18,3 +18,12 @@ char my_global_array[42];
     ]);
 }
 
+#[test]
+fn allow_definition_of_constant_global_variables() {
+    let code = r#"
+constexpr int my_constant_global = 42;
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+

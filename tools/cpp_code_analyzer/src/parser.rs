@@ -291,7 +291,7 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
         name = code[range.start..range.end].to_string();
         kind = Kind::Variable(Variable {
           visibility: access_specifier.to_string(),
-          is_const: false,
+          is_const: check_is_const(&field.parent().unwrap(), code),
         });
       }
       "init_declarator" => { return extract_field_or_function(&child, code, access_specifier) },
@@ -305,7 +305,7 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
         } else {
           kind = Kind::Variable(Variable {
             visibility: access_specifier.to_string(),
-            is_const: false,
+            is_const: check_is_const(&field.parent().unwrap(), code),
           });
         }
       }
@@ -317,7 +317,8 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
         });
       }
       ";"|"{"|"}"|"("|")"|":"|"=" => (),
-      "virtual"|"primitive_type"|"number_literal" => (),
+      "virtual"|"primitive_type"|"number_literal"
+        |"type_qualifier" => (),
       "enum_specifier" => {
         return parse_enum(&child, code);
       }
@@ -422,5 +423,19 @@ fn get_class_name(cl: &Node, code: &str) -> String {
     }
   }
   panic!("each class must have a name!")
+}
+
+fn check_is_const(node: &Node, code: &str) -> bool {
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      "type_qualifier" => {
+        return &code[range.start..range.end] == "constexpr";
+      },
+      _ => (),
+    }
+  }
+  false
 }
 
