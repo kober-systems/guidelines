@@ -287,7 +287,7 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
     let child = field.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "field_identifier"|"identifier" => {
+      "field_identifier"|"identifier"|"array_declarator" => {
         name = code[range.start..range.end].to_string();
         kind = Kind::Variable(Variable {
           visibility: access_specifier.to_string(),
