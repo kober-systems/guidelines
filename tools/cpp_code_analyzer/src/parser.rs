@@ -42,6 +42,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
       "type_definition" => parse_global_codechunk(base, &child, code),
       "struct_specifier" => base.children.push(parse_struct(&child, code)),
       "type_identifier" => (),
+      "function_definition" => base.children.push(extract_function(&child, code, "public")),
       _ => base.children.push(AST {
         name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
@@ -349,6 +350,10 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
     instructions: vec![],
     range: field.byte_range(),
   }
+}
+
+fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
+  extract_field_or_function(field, code, access_specifier)
 }
 
 fn parse_enum(node: &Node, code: &str) -> AST {
