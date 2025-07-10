@@ -93,6 +93,10 @@ fn parse_preproc_args() {
 
 #if defined(PROPROC_CONDITION)
 #define PREPROC_PARAM2 42;
+#elif defined(ELSE_PREPROC_CONDITION)
+#define PREPROC_PARAM2 0;
+#else
+#define PREPROC_PARAM2 1;
 #endif
 
 #ifdef PROPROC_CONDITION2
