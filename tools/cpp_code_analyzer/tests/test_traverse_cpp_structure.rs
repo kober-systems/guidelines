@@ -117,3 +117,13 @@ fn parse_preproc_args() {
     let errors = analyze_cpp(code);
     assert_eq!(errors, Vec::<String>::new());
 }
+
+#[test]
+fn parse_alias_declarations() {
+    let code = r#"
+using my_alias = MyClass::my_inner_enum;
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+

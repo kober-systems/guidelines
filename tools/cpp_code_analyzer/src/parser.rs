@@ -41,6 +41,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
       "enum_specifier" => base.children.push(parse_enum(&child, code)),
       "type_definition" => parse_global_codechunk(base, &child, code),
       "struct_specifier" => base.children.push(parse_struct(&child, code)),
+      "alias_declaration" => base.children.push(parse_alias(&child, code)),
       "type_identifier" => (),
       "function_definition" => base.children.push(extract_function(&child, code, "public")),
       _ => base.children.push(AST {
@@ -174,6 +175,7 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
       "function_definition" => children.push(extract_field_or_function(&child, code, access_specifier)),
       "type_definition" => children.push(parse_struct(&child, code)),
       "type_identifier"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
+      "alias_declaration" => children.push(parse_alias(&child, code)),
       _ => children.push(AST {
         name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
@@ -390,6 +392,38 @@ fn parse_enum(node: &Node, code: &str) -> AST {
 }
 
 fn parse_struct(node: &Node, code: &str) -> AST {
+  let mut children = vec![];
+  let mut name = "";
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    match child.kind() {
+      "type_identifier" => {
+        let range = child.byte_range();
+        name = &code[range.start..range.end];
+      }
+      _ => children.push(AST {
+        name: "".to_string(),
+        kind: Kind::Unhandled(child.to_sexp()),
+        children: vec![],
+        dependencies: vec![],
+        instructions: vec![],
+        range: child.byte_range(),
+      }),
+    }
+  }
+
+  AST {
+    name: name.to_string(),
+    kind: Kind::Type,
+    children,
+    dependencies: vec![],
+    instructions: vec![],
+    range: node.byte_range(),
+  }
+}
+
+fn parse_alias(node: &Node, code: &str) -> AST {
   let mut children = vec![];
   let mut name = "";
 
