@@ -5,7 +5,8 @@ use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use codespan_reporting::term;
-use cpp_code_analyzer::analyze_cpp_errors;
+use cpp_code_analyzer::visualize::visualize;
+use cpp_code_analyzer::{analyze_cpp_errors, parser};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -13,6 +14,8 @@ struct Args {
     /// File to check
     #[arg(short, long, value_name = "FILE")]
     input: PathBuf,
+    #[arg(long)]
+    svg: bool,
 }
 
 fn main() {
@@ -20,7 +23,11 @@ fn main() {
 
     let input = std::fs::read_to_string(&args.input).expect("Could not read input");
     let filepath = args.input.to_string_lossy();
-    print_errors(&input, &filepath);
+    if !args.svg {
+      print_errors(&input, &filepath);
+    } else {
+      to_svg(&input, &filepath);
+    }
 }
 
 fn print_errors(input: &str, filepath: &str) {
@@ -42,3 +49,10 @@ fn print_errors(input: &str, filepath: &str) {
       term::emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
     }
 }
+
+fn to_svg(input: &str, filepath: &str) {
+  let ast = vec![parser::parse_cpp_chunc(filepath, input)];
+
+  println!("{}", visualize(&ast, input));
+}
+
