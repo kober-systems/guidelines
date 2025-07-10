@@ -94,6 +94,10 @@ fn parse_preproc_args() {
 #if defined(PROPROC_CONDITION)
 #define PREPROC_PARAM2 42;
 #endif
+
+#ifdef PROPROC_CONDITION2
+#define PREPROC_PARAM3 42;
+#endif
 "#;
     let errors = analyze_cpp(code);
     assert_eq!(errors, Vec::<String>::new());

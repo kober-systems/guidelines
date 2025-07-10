@@ -32,7 +32,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
       "identifier"|"namespace_identifier" => (), // ignoring identifiers on global level
       "template_declaration" => parse_global_codechunk(base, &child, code),
       "template_parameter_list" => (),
-      "comment"|"#ifndef"|"#define"|"#endif"|"preproc_arg"|"namespace"|"#if"|"preproc_defined"|"template"|"typedef" => (),
+      "comment"|"#ifdef"|"#ifndef"|"#define"|"#endif"|"preproc_arg"|"namespace"|"#if"|"preproc_defined"|"template"|"typedef" => (),
       ";"|"{"|"}"|"\n" => (),
       "enum_specifier" => base.children.push(parse_enum(&child, code)),
       "type_definition" => parse_global_codechunk(base, &child, code),
