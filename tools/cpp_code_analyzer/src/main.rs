@@ -20,6 +20,10 @@ fn main() {
 
     let input = std::fs::read_to_string(&args.input).expect("Could not read input");
     let filepath = args.input.to_string_lossy();
+    print_errors(&input, &filepath);
+}
+
+fn print_errors(input: &str, filepath: &str) {
     let errors = analyze_cpp_errors(&filepath, &input);
 
     let writer = StandardStream::stderr(ColorChoice::Always);
