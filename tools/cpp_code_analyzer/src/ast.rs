@@ -41,3 +41,16 @@ pub struct LintInstruction {
   pub ident: String,
   pub reason: String,
 }
+
+impl Default for AST {
+  fn default() -> Self {
+    Self {
+      name: "".to_string(),
+      kind: Kind::Unhandled("not existant".to_string()),
+      children: vec![],
+      dependencies: vec![],
+      range: core::ops::Range::default(),
+      instructions: vec![],
+    }
+  }
+}

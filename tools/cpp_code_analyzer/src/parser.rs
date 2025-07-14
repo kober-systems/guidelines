@@ -11,10 +11,8 @@ pub fn parse_cpp_chunc(name: &str, input: &str) -> AST {
   let mut base = AST {
     name: name.to_string(),
     kind: Kind::File { content: input.to_string() },
-    children: vec![],
-    dependencies: vec![],
-    instructions: vec![],
     range: root_node.byte_range(),
+    ..AST::default()
   };
   parse_global_codechunk(&mut base, &root_node, input);
 
@@ -45,12 +43,9 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
       "type_identifier" => (),
       "function_definition" => base.children.push(extract_function(&child, code, "public")),
       _ => base.children.push(AST {
-        name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
-        children: vec![],
-        dependencies: vec![],
-        instructions: vec![],
         range: child.byte_range(),
+        ..AST::default()
       }),
     }
   }
@@ -69,12 +64,9 @@ fn parse_include(node: &Node, code: &str) -> AST {
       }
       "type_identifier"|"class"|";" => (),
       _ => children.push(AST {
-        name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
-        children: vec![],
-        dependencies: vec![],
-        instructions: vec![],
         range: child.byte_range(),
+        ..AST::default()
       }),
     }
   }
@@ -83,9 +75,8 @@ fn parse_include(node: &Node, code: &str) -> AST {
     name: name.to_string(),
     kind: Kind::Reference,
     children,
-    dependencies: vec![],
-    instructions: vec![],
     range: node.byte_range(),
+    ..AST::default()
   }
 }
 
@@ -110,12 +101,9 @@ fn extract_class(cl: &Node, code: &str) -> AST {
               reason: reason.to_string(),
             }),
             None => children.push(AST {
-              name: "".to_string(),
               kind: Kind::LintError(format!("could not parse lint instruction in comment: {previous_comment}")) ,
-              children: vec![],
-              dependencies: vec![],
-              instructions: vec![],
               range: range.clone(),
+              ..AST::default()
             })
           }
         }
@@ -138,12 +126,9 @@ fn extract_class(cl: &Node, code: &str) -> AST {
       "type_identifier"|"class"|";" => (),
       "template_type" => (),
       _ => children.push(AST {
-        name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
-        children: vec![],
-        dependencies: vec![],
-        instructions: vec![],
         range: child.byte_range(),
+        ..AST::default()
       }),
     }
   }
@@ -177,12 +162,9 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
       "type_identifier"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
       "alias_declaration" => children.push(parse_alias(&child, code)),
       _ => children.push(AST {
-        name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
-        children: vec![],
-        dependencies: vec![],
-        instructions: vec![],
         range,
+        ..AST::default()
       }),
     }
   }
@@ -201,37 +183,27 @@ fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<AST>, Ve
       "type_identifier" => derived_from.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference,
-        children: vec![],
-        dependencies: vec![],
-        instructions: vec![],
         range: child.byte_range(),
+        ..AST::default()
       }),
       "template_type" => derived_from.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference,
-        children: vec![],
-        dependencies: vec![],
-        instructions: vec![],
         range: child.byte_range(),
+        ..AST::default()
       }),
       "access_specifier" => if &code[range.start..range.end] != "public" {
         errors.push(AST {
-          name: "".to_string(),
           kind: Kind::LintError(format!("Class '{class_name}': Derives must always be public")),
-          children: vec![],
-          dependencies: vec![],
-          instructions: vec![],
           range: child.byte_range(),
+          ..AST::default()
         });
       }
       "class"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
       _ => errors.push(AST {
-        name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
-        children: vec![],
-        dependencies: vec![],
-        instructions: vec![],
         range: child.byte_range(),
+        ..AST::default()
       }),
     }
   }
@@ -329,12 +301,9 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
         parsed_element = Some(parse_enum(&child, code));
       }
       _ => errors.push(AST {
-        name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
-        children: vec![],
-        dependencies: vec![],
-        instructions: vec![],
         range: child.byte_range(),
+        ..AST::default()
       }),
     }
   }
@@ -348,9 +317,8 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
     name,
     kind,
     children: errors,
-    dependencies: vec![],
-    instructions: vec![],
     range: field.byte_range(),
+    ..AST::default()
   }
 }
 
@@ -371,12 +339,9 @@ fn parse_enum(node: &Node, code: &str) -> AST {
       }
       "enumerator_list"|"class"|";" => (),
       _ => children.push(AST {
-        name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
-        children: vec![],
-        dependencies: vec![],
-        instructions: vec![],
         range: child.byte_range(),
+        ..AST::default()
       }),
     }
   }
@@ -385,9 +350,8 @@ fn parse_enum(node: &Node, code: &str) -> AST {
     name: name.to_string(),
     kind: Kind::Type,
     children,
-    dependencies: vec![],
-    instructions: vec![],
     range: node.byte_range(),
+    ..AST::default()
   }
 }
 
@@ -403,12 +367,9 @@ fn parse_struct(node: &Node, code: &str) -> AST {
         name = &code[range.start..range.end];
       }
       _ => children.push(AST {
-        name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
-        children: vec![],
-        dependencies: vec![],
-        instructions: vec![],
         range: child.byte_range(),
+        ..AST::default()
       }),
     }
   }
@@ -417,9 +378,8 @@ fn parse_struct(node: &Node, code: &str) -> AST {
     name: name.to_string(),
     kind: Kind::Type,
     children,
-    dependencies: vec![],
-    instructions: vec![],
     range: node.byte_range(),
+    ..AST::default()
   }
 }
 
@@ -435,12 +395,9 @@ fn parse_alias(node: &Node, code: &str) -> AST {
         name = &code[range.start..range.end];
       }
       _ => children.push(AST {
-        name: "".to_string(),
         kind: Kind::Unhandled(child.to_sexp()),
-        children: vec![],
-        dependencies: vec![],
-        instructions: vec![],
         range: child.byte_range(),
+        ..AST::default()
       }),
     }
   }
@@ -449,9 +406,8 @@ fn parse_alias(node: &Node, code: &str) -> AST {
     name: name.to_string(),
     kind: Kind::Type,
     children,
-    dependencies: vec![],
-    instructions: vec![],
     range: node.byte_range(),
+    ..AST::default()
   }
 }
 
