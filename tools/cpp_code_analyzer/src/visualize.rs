@@ -124,11 +124,30 @@ fn extract_node(input: &AST, code: &str, base: GraphData) -> GraphData {
       }
       base
     },
-    Kind::Function(_)|Kind::Type|Kind::Reference|Kind::Variable(_) => {
+    Kind::Type|Kind::Reference|Kind::Variable(_) => {
       base.nodes.insert(input.name.clone(), Entity {
         kind: get_entity_type(&input).to_string(),
         name: input.name.clone(),
         problematic: None } );
+      base
+    },
+    Kind::Function(_) => {
+      let name = match input.name.split_once("(") {
+        Some((name, _params)) => name,
+        None => &input.name,
+      };
+      match name.split_once("::") {
+        Some((class_name, _f_name)) => {
+          if !base.nodes.contains_key(class_name) {
+            base.nodes.insert(class_name.to_string(), Entity {
+              kind: "C".to_string(),
+              name: input.name.clone(),
+              problematic: None } );
+          }
+        }
+        None => {
+        }
+      }
       base
     },
     Kind::Unhandled(_element) => base,
