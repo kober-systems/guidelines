@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct AST {
   pub name: String,
   pub kind: Kind,
@@ -7,6 +8,7 @@ pub struct AST {
   pub instructions: Vec<LintInstruction>,
 }
 
+#[derive(Debug)]
 pub enum Kind {
   File{ content: String },
   Class(Class),
@@ -18,15 +20,18 @@ pub enum Kind {
   LintError(String),
 }
 
+#[derive(Debug)]
 pub struct Class {
   pub is_abstract: bool,
 }
 
+#[derive(Debug)]
 pub struct Variable {
   pub is_const: bool,
   pub visibility: String,
 }
 
+#[derive(Debug)]
 pub struct Function {
   pub is_virtual: bool,
   pub visibility: String,
@@ -37,6 +42,7 @@ pub struct LintError {
   pub range: core::ops::Range<usize>,
 }
 
+#[derive(Debug)]
 pub struct LintInstruction {
   pub ident: String,
   pub reason: String,
