@@ -90,7 +90,7 @@ fn get_style(problematic: bool) -> StyleAttr {
       Color::fast("black")
     },
     2,
-    Some(Color::fast("white")),
+    Some(Color::new(0xf2f2f2ff)), // gray95
     0,
     15
   )
