@@ -52,7 +52,6 @@ pub fn visualize(ast: Vec<AST>, code: &str) -> String {
   let g = remove_visual_noise(g);
   visualize_graph_data(g, &mut vg);
 
-
   let mut svg = SVGWriter::new();
   vg.do_it(false, false, false, &mut svg);
 
@@ -184,7 +183,7 @@ fn remove_visual_noise(graph: GraphData) -> GraphData {
         nodes_to_be_removed.remove(&con.from);
         true
       }
-      None => true,
+      None => !nodes_to_be_removed.contains(&con.to),
     }
   }).collect();
 
@@ -306,7 +305,7 @@ mod tests {
   }
 
   #[test]
-  fn non_problematic_nodes_that_problematic_connections_should_stay() {
+  fn non_problematic_nodes_with_problematic_connections_should_stay() {
     let graph = GraphData {
       nodes: BTreeMap::from([
         ("Interface".to_string(), Entity {
@@ -370,6 +369,65 @@ mod tests {
           from: "MyClass".to_string(),
           to: "MyGlobalConstant".to_string(),
           problematic: Some("Something is wrong".to_string()),
+        },
+      ],
+    });
+  }
+
+  #[test]
+  fn remove_non_problematic_connections_to_uninteresting_nodes() {
+    let graph = GraphData {
+      nodes: BTreeMap::from([
+        ("Interface".to_string(), Entity {
+          kind: "I".to_string(),
+          name: "Interface".to_string(),
+          problematic: None,
+        }),
+        ("MyClass".to_string(), Entity {
+          kind: "C".to_string(),
+          name: "MyClass".to_string(),
+          problematic: None,
+        }),
+        ("MyGlobalConstant".to_string(), Entity {
+          kind: "V".to_string(),
+          name: "MyGlobalConstant".to_string(),
+          problematic: None,
+        }),
+      ]),
+      connections: vec![
+        Connection {
+          kind: ConnectionType::Inheritance,
+          from: "MyClass".to_string(),
+          to: "Interface".to_string(),
+          problematic: None,
+        },
+        Connection {
+          kind: ConnectionType::Usage,
+          from: "MyClass".to_string(),
+          to: "MyGlobalConstant".to_string(),
+          problematic: None,
+        },
+      ],
+    };
+    assert_eq!(remove_visual_noise(graph), GraphData {
+      nodes: BTreeMap::from([
+        ("Interface".to_string(), Entity {
+          kind: "I".to_string(),
+          name: "Interface".to_string(),
+          problematic: None,
+        }),
+        ("MyClass".to_string(), Entity {
+          kind: "C".to_string(),
+          name: "MyClass".to_string(),
+          problematic: None,
+        }),
+      ]),
+      connections: vec![
+        Connection {
+          kind: ConnectionType::Inheritance,
+          from: "MyClass".to_string(),
+          to: "Interface".to_string(),
+          problematic: None,
         },
       ],
     });
