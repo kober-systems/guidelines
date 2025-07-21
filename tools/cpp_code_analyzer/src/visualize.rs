@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 
 use crate::ast::{AST, Kind};
 
@@ -45,6 +45,7 @@ pub fn visualize(ast: Vec<AST>, code: &str) -> String {
   for node in ast.iter() {
     g = extract_node(node, code, g)
   }
+  let g = remove_visual_noise(g);
   visualize_graph_data(g, &mut vg);
 
 
@@ -155,6 +156,26 @@ fn extract_node(input: &AST, code: &str, base: GraphData) -> GraphData {
     Kind::Unhandled(_element) => base,
     _ => todo!()
   }
+}
+
+/// Some nodes make the output only less readable. Keep them only when
+/// they create problems in the code and need attention
+fn remove_visual_noise(graph: GraphData) -> GraphData {
+  let GraphData { nodes, connections } = graph;
+  let mut nodes_to_be_removed: HashSet<_> = nodes.iter().filter_map(|(name, node)| match node.kind.as_str() {
+    "T"|"V"|"F" => {
+      if node.problematic.is_none() {
+        Some(name.to_string())
+      } else {
+        None
+      }
+    }
+    _ => None,
+  }).collect();
+
+  let nodes = nodes.into_iter().filter(|(name, _node)| !nodes_to_be_removed.contains(name) ).collect();
+
+  GraphData { nodes, connections }
 }
 
 fn get_entity_type(input: &AST) -> &str {
