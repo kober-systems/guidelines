@@ -22,6 +22,12 @@ char my_global_array[42];
 fn allow_definition_of_constant_global_variables() {
     let code = r#"
 constexpr int my_constant_global = 42;
+
+typedef struct {
+  int var = 42;
+} my_struct;
+
+constexpr my_struct my_constant_global_struct;
 "#;
     let errors = analyze_cpp(code);
     assert_eq!(errors, Vec::<String>::new());

@@ -436,6 +436,9 @@ fn check_is_const(node: &Node, code: &str) -> bool {
       "type_qualifier" => {
         return &code[range.start..range.end] == "constexpr";
       },
+      "declaration" => {
+        return check_is_const(&child, code);
+      }
       _ => (),
     }
   }
