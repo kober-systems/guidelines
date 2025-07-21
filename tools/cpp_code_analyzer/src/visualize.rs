@@ -393,6 +393,11 @@ mod tests {
           name: "MyGlobalConstant".to_string(),
           problematic: None,
         }),
+        ("MyStruct".to_string(), Entity {
+          kind: "T".to_string(),
+          name: "MyStruct".to_string(),
+          problematic: None,
+        }),
       ]),
       connections: vec![
         Connection {
@@ -405,6 +410,12 @@ mod tests {
           kind: ConnectionType::Usage,
           from: "MyClass".to_string(),
           to: "MyGlobalConstant".to_string(),
+          problematic: None,
+        },
+        Connection {
+          kind: ConnectionType::Usage,
+          from: "MyGlobalConstant".to_string(),
+          to: "MyStruct".to_string(),
           problematic: None,
         },
       ],
