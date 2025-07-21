@@ -12,11 +12,13 @@ use layout::std_shapes::shapes::*;
 use layout::topo::layout::VisualGraph;
 //use layout::topo::placer::Placer;
 
+#[derive(Debug, PartialEq)]
 struct GraphData {
   nodes: BTreeMap<String, Entity>,
   connections: Vec<Connection>,
 }
 
+#[derive(Debug, PartialEq)]
 struct Connection {
   kind: ConnectionType, // Dependency, Inheritance, Composition, Usage,
   from: String,
@@ -24,12 +26,14 @@ struct Connection {
   problematic: Option<String>,
 }
 
+#[derive(Debug, PartialEq)]
 enum ConnectionType {
   Usage,
   Inheritance,
   Composition,
 }
 
+#[derive(Debug, PartialEq)]
 struct Entity {
   kind: String, // Extern, Interface, Class, Variable, Function, Type (Struct|Enum)
   name: String,
@@ -207,5 +211,86 @@ fn is_problematic(node: &AST) -> Option<String> {
     Some("TODO".to_string())
   } else {
     None
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use pretty_assertions::assert_eq;
+  use super::*;
+
+  #[test]
+  fn non_problematic_variables_should_be_filtered() {
+    let graph = GraphData {
+      nodes: BTreeMap::from([
+        ("Interface".to_string(), Entity {
+          kind: "I".to_string(),
+          name: "Interface".to_string(),
+          problematic: None,
+        }),
+        ("MyClass".to_string(), Entity {
+          kind: "C".to_string(),
+          name: "MyClass".to_string(),
+          problematic: None,
+        }),
+        ("MyGlobalVar".to_string(), Entity {
+          kind: "V".to_string(),
+          name: "MyGlobalVar".to_string(),
+          problematic: Some("Global variables create hidden dependencies".to_string()),
+        }),
+        ("MyGlobalConstant".to_string(), Entity {
+          kind: "V".to_string(),
+          name: "MyGlobalConstant".to_string(),
+          problematic: None,
+        }),
+      ]),
+      connections: vec![
+        Connection {
+          kind: ConnectionType::Inheritance,
+          from: "MyClass".to_string(),
+          to: "Interface".to_string(),
+          problematic: None,
+        },
+        Connection {
+          kind: ConnectionType::Usage,
+          from: "MyClass".to_string(),
+          to: "MyGlobalVar".to_string(),
+          problematic: Some("Global variables create hidden dependencies".to_string()),
+        },
+      ],
+    };
+    assert_eq!(remove_visual_noise(graph), GraphData {
+      nodes: BTreeMap::from([
+        ("Interface".to_string(), Entity {
+          kind: "I".to_string(),
+          name: "Interface".to_string(),
+          problematic: None,
+        }),
+        ("MyClass".to_string(), Entity {
+          kind: "C".to_string(),
+          name: "MyClass".to_string(),
+          problematic: None,
+        }),
+        ("MyGlobalVar".to_string(), Entity {
+          kind: "V".to_string(),
+          name: "MyGlobalVar".to_string(),
+          problematic: Some("Global variables create hidden dependencies".to_string()),
+        }),
+      ]),
+      connections: vec![
+        Connection {
+          kind: ConnectionType::Inheritance,
+          from: "MyClass".to_string(),
+          to: "Interface".to_string(),
+          problematic: None,
+        },
+        Connection {
+          kind: ConnectionType::Usage,
+          from: "MyClass".to_string(),
+          to: "MyGlobalVar".to_string(),
+          problematic: Some("Global variables create hidden dependencies".to_string()),
+        },
+      ],
+    });
   }
 }
