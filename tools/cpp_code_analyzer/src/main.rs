@@ -33,14 +33,17 @@ fn main() -> io::Result<()> {
 }
 
 fn print_all_errors(ast: &Vec<AST>) {
+  let mut all_errs_cnt = 0;
   for ast in ast.iter() {
     if let Kind::File { content } = &ast.kind {
-      print_errors(&content, &ast.name);
+      all_errs_cnt += print_errors(&content, &ast.name);
     }
   }
+
+  println!("found {all_errs_cnt} errors");
 }
 
-fn print_errors(input: &str, filepath: &str) {
+fn print_errors(input: &str, filepath: &str) -> usize {
     let errors = analyze_cpp_errors(&filepath, &input);
 
     let writer = StandardStream::stderr(ColorChoice::Always);
@@ -58,6 +61,8 @@ fn print_errors(input: &str, filepath: &str) {
 
       term::emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
     }
+
+    errors.len()
 }
 
 fn to_svg(ast: &Vec<AST>) {
