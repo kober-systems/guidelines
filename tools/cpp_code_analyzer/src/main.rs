@@ -71,7 +71,9 @@ fn get_sources_from_dir(dir: &Path) -> io::Result<Vec<AST>> {
       let entry = entry?;
       let path = entry.path();
       if path.is_dir() {
-          entries.append(&mut get_sources_from_dir(&path)?);
+          if !is_path_hidden(&path)  {
+            entries.append(&mut get_sources_from_dir(&path)?);
+          }
       } else {
         let filepath = path.to_string_lossy().to_string();
         if filepath.ends_with(".h") || filepath.ends_with(".cpp") {
@@ -87,4 +89,8 @@ fn get_sources_from_dir(dir: &Path) -> io::Result<Vec<AST>> {
   }
 
   Ok(entries)
+}
+
+fn is_path_hidden(path: &Path) -> bool {
+  path.file_name().unwrap().to_string_lossy().starts_with(".")
 }
