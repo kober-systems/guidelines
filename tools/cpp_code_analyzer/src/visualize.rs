@@ -177,6 +177,17 @@ fn remove_visual_noise(graph: GraphData) -> GraphData {
     _ => None,
   }).collect();
 
+  let connections = connections.into_iter().filter(|con| {
+    match &con.problematic {
+      Some(_) => {
+        nodes_to_be_removed.remove(&con.to);
+        nodes_to_be_removed.remove(&con.from);
+        true
+      }
+      None => true,
+    }
+  }).collect();
+
   let nodes = nodes.into_iter().filter(|(name, _node)| !nodes_to_be_removed.contains(name) ).collect();
 
   GraphData { nodes, connections }
@@ -289,6 +300,76 @@ mod tests {
           from: "MyClass".to_string(),
           to: "MyGlobalVar".to_string(),
           problematic: Some("Global variables create hidden dependencies".to_string()),
+        },
+      ],
+    });
+  }
+
+  #[test]
+  fn non_problematic_nodes_that_problematic_connections_should_stay() {
+    let graph = GraphData {
+      nodes: BTreeMap::from([
+        ("Interface".to_string(), Entity {
+          kind: "I".to_string(),
+          name: "Interface".to_string(),
+          problematic: None,
+        }),
+        ("MyClass".to_string(), Entity {
+          kind: "C".to_string(),
+          name: "MyClass".to_string(),
+          problematic: None,
+        }),
+        ("MyGlobalConstant".to_string(), Entity {
+          kind: "V".to_string(),
+          name: "MyGlobalConstant".to_string(),
+          problematic: None,
+        }),
+      ]),
+      connections: vec![
+        Connection {
+          kind: ConnectionType::Inheritance,
+          from: "MyClass".to_string(),
+          to: "Interface".to_string(),
+          problematic: None,
+        },
+        Connection {
+          kind: ConnectionType::Usage,
+          from: "MyClass".to_string(),
+          to: "MyGlobalConstant".to_string(),
+          problematic: Some("Something is wrong".to_string()),
+        },
+      ],
+    };
+    assert_eq!(remove_visual_noise(graph), GraphData {
+      nodes: BTreeMap::from([
+        ("Interface".to_string(), Entity {
+          kind: "I".to_string(),
+          name: "Interface".to_string(),
+          problematic: None,
+        }),
+        ("MyClass".to_string(), Entity {
+          kind: "C".to_string(),
+          name: "MyClass".to_string(),
+          problematic: None,
+        }),
+        ("MyGlobalConstant".to_string(), Entity {
+          kind: "V".to_string(),
+          name: "MyGlobalConstant".to_string(),
+          problematic: None,
+        }),
+      ]),
+      connections: vec![
+        Connection {
+          kind: ConnectionType::Inheritance,
+          from: "MyClass".to_string(),
+          to: "Interface".to_string(),
+          problematic: None,
+        },
+        Connection {
+          kind: ConnectionType::Usage,
+          from: "MyClass".to_string(),
+          to: "MyGlobalConstant".to_string(),
+          problematic: Some("Something is wrong".to_string()),
         },
       ],
     });
