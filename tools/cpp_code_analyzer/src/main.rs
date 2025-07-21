@@ -27,7 +27,7 @@ fn main() -> io::Result<()> {
     if !args.svg {
       print_all_errors(&entries);
     } else {
-      to_svg(&entries);
+      to_svg(entries);
     }
     Ok(())
 }
@@ -65,8 +65,8 @@ fn print_errors(input: &str, filepath: &str) -> usize {
     errors.len()
 }
 
-fn to_svg(ast: &Vec<AST>) {
-  println!("{}", visualize(&ast, ""));
+fn to_svg(ast: Vec<AST>) {
+  println!("{}", visualize(ast, ""));
 }
 
 fn get_sources_from_dir(dir: &Path) -> io::Result<Vec<AST>> {

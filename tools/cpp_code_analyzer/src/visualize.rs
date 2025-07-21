@@ -36,11 +36,13 @@ struct Entity {
   problematic: Option<String>,
 }
 
-pub fn visualize(ast: &Vec<AST>, code: &str) -> String {
+pub fn visualize(ast: Vec<AST>, code: &str) -> String {
+  let ast = crate::checker::add_lint_erros(ast);
+
   let mut vg = VisualGraph::new(Orientation::LeftToRight);
 
   let mut g = GraphData { nodes: BTreeMap::default(), connections: vec![] };
-  for node in ast.into_iter() {
+  for node in ast.iter() {
     g = extract_node(node, code, g)
   }
   visualize_graph_data(g, &mut vg);
@@ -109,7 +111,7 @@ fn extract_node(input: &AST, code: &str, base: GraphData) -> GraphData {
       base.nodes.insert(input.name.clone(), Entity {
         kind: if cl.is_abstract { "A".to_string() } else { "C".to_string() },
         name: input.name.clone(),
-        problematic: None } );
+        problematic: is_problematic(input) } );
       for dependecy in input.dependencies.iter() {
         let dep_name = dependecy.name.to_string();
         if !base.nodes.contains_key(&dep_name) {
@@ -128,7 +130,7 @@ fn extract_node(input: &AST, code: &str, base: GraphData) -> GraphData {
       base.nodes.insert(input.name.clone(), Entity {
         kind: get_entity_type(&input).to_string(),
         name: input.name.clone(),
-        problematic: None } );
+        problematic: is_problematic(input)} );
       base
     },
     Kind::Function(_) => {
@@ -142,7 +144,7 @@ fn extract_node(input: &AST, code: &str, base: GraphData) -> GraphData {
             base.nodes.insert(class_name.to_string(), Entity {
               kind: "C".to_string(),
               name: input.name.clone(),
-              problematic: None } );
+              problematic: is_problematic(input)} );
           }
         }
         None => {
@@ -173,4 +175,16 @@ fn get_entity_type(input: &AST) -> &str {
 
 fn get_text_width(text: &str) -> f64 {
   (text.len() as f64 * 8.) + 20.
+}
+
+fn is_problematic(node: &AST) -> Option<String> {
+  if node.children.iter().filter(|n| match n.kind {
+    Kind::LintError(_) => true,
+    Kind::Unhandled(_) => true,
+    _ => false,
+  }).count() > 0 {
+    Some("TODO".to_string())
+  } else {
+    None
+  }
 }

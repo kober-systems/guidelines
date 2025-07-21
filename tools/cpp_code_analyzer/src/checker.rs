@@ -9,6 +9,27 @@ pub fn check_global_codechunk(ast: &Vec<AST>, code: &str) -> Vec<LintError> {
   errors
 }
 
+pub fn add_lint_erros(ast: Vec<AST>) -> Vec<AST> {
+  ast.into_iter().map(|mut node| {
+    match &node.kind {
+      Kind::File { content } => {
+        node.children = node.children.into_iter().map(|mut node| {
+          let errors = get_lint_errors_for_node(&node, &content);
+          for err in errors.into_iter() {
+            node.children.push(AST {
+              kind: Kind::LintError(err.message),
+              ..AST::default()
+            });
+          }
+          node
+        }).collect();
+      },
+      _ => todo!(),
+    }
+    node
+  }).collect()
+}
+
 fn check_abstract_class(node: &AST, class_name: &str, code: &str) -> Vec<LintError> {
   let mut errors = vec![];
   let mut has_default_destructor = false;
@@ -195,4 +216,43 @@ fn error_message_from_ast(input: &AST, code: &str) -> Vec<LintError> {
   }
 
   errors
+}
+
+fn get_lint_errors_for_node(input: &AST, code: &str) -> Vec<LintError> {
+  let name = &input.name;
+  match &input.kind {
+    Kind::Class(ref cl) => {
+      let mut errors = vec![];
+      if cl.is_abstract {
+        errors.append(&mut check_abstract_class(&input, &name, code));
+      } else {
+        errors.append(&mut check_derived_class(&input, &name));
+        if input.dependencies.len() == 0 {
+          errors.push(LintError {
+            message: format!("Class '{name}' must be derived from abstract interface"),
+            range: input.range.clone(),
+          });
+        }
+      }
+      errors.append(&mut check_derives(input));
+      errors
+    }
+    Kind::Function(_fun) => vec![],
+    Kind::Type => vec![],
+    Kind::Variable(var) => {
+      let mut errors = vec![];
+      if !var.is_const {
+        errors.push(LintError {
+          message: format!("It's not allowed to create global variables ('{}'). Global variables create invisible coupling.", input.name),
+          range: input.range.clone(),
+        });
+      };
+      errors
+    }
+    Kind::Unhandled(element) => vec![LintError {
+      message: element.clone(),
+      range: input.range.clone(),
+    }],
+    _ => todo!()
+  }
 }
