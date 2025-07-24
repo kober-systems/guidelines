@@ -442,17 +442,8 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
   for idx in 0..node.child_count() {
     let child = node.child(idx).unwrap();
     match child.kind() {
-      "identifier" => {
-        let range = child.byte_range();
-        children.push(AST {
-          name: code[range.start..range.end].to_string(),
-          kind: Kind::Variable(Variable {
-            is_const: false,
-            visibility: "public".to_string(),
-          }),
-          range: node.byte_range(),
-          ..AST::default()
-        })
+      "identifier"|"pointer_expression" => {
+        children.push(extract_argument(&child, code))
       }
       "("|")"|"," => (),
       _ => children.push(AST {
@@ -464,6 +455,42 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
   }
 
   children
+}
+
+fn extract_argument(node: &Node, code: &str) -> AST {
+  let mut dependencies = vec![];
+  let mut children = vec![];
+  let mut name = "";
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      "identifier" => {
+        name = &code[range.start..range.end];
+      }
+      "pointer_expression" => {
+        return extract_argument(&child, code);
+      }
+      _ => children.push(AST {
+        kind: Kind::Unhandled(child.to_sexp()),
+        range: child.byte_range(),
+        ..AST::default()
+      }),
+    }
+  }
+
+  AST {
+    name: name.to_string(),
+    kind: Kind::Variable(Variable {
+      is_const: false,
+      visibility: "public".to_string(),
+    }),
+    children,
+    dependencies,
+    range: node.byte_range(),
+    ..AST::default()
+  }
 }
 
 fn extract_param(node: &Node, code: &str) -> AST {

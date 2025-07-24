@@ -61,7 +61,7 @@ int function_using_param(int var, float var2) {
 fn allow_calling_external_functions() {
     let code = r#"
 int function_call_other(int var) {
-  external_fn_with_param(var);
+  external_fn_with_param(var, &var);
 
   return some_external_function();
 }
