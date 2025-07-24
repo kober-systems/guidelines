@@ -49,7 +49,7 @@ int function_using_global_var() {
 #[test]
 fn allow_usage_of_parameters() {
     let code = r#"
-int function_using_param(int var) {
+int function_using_param(int var, float var2) {
   return var;
 }
 "#;

@@ -394,7 +394,7 @@ fn extract_parameters(node: &Node, code: &str) -> Vec<AST> {
     let child = node.child(idx).unwrap();
     match child.kind() {
       "parameter_declaration" => children.push(extract_param(&child, code)),
-      "("|")" => (),
+      "("|")"|"," => (),
       "identifier" => (),
       "parameter_list" => children.append(&mut extract_parameters(&child, code)),
       _ => children.push(AST {
