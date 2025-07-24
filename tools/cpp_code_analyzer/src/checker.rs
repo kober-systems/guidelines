@@ -4,6 +4,10 @@ use crate::ast::{AST, Kind, Function, LintError, Reference};
 
 pub fn check_global_codechunk(ast: &Vec<AST>, code: &str) -> Vec<LintError> {
   let vars = get_variables_from_all_classes(ast);
+  error_message_from_global_codechunk(ast, code, &vars)
+}
+
+fn error_message_from_global_codechunk(ast: &Vec<AST>, code: &str, vars: &HashMap<String, HashSet<String>>) -> Vec<LintError> {
 
   let mut errors = vec![];
   for node in ast.into_iter() {
@@ -191,7 +195,7 @@ fn error_message_from_ast(input: &AST, code: &str, vars: &HashMap<String, HashSe
   let mut errors = vec![];
 
   match &input.kind {
-    Kind::File { content } => errors.append(&mut check_global_codechunk(&input.children, &content)),
+    Kind::File { content } => errors.append(&mut error_message_from_global_codechunk(&input.children, &content, vars)),
     _ => errors.append(&mut get_lint_errors_for_node(input, code, vars)),
   }
 
