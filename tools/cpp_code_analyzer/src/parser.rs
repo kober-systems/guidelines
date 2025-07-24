@@ -368,16 +368,44 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
     let range = child.byte_range();
     match child.kind() {
       "return_statement"|"if_statement"|"condition_clause"
-        |"compound_statement"|"expression_statement" => children.append(&mut extract_statement(&child, code)),
+        |"compound_statement"|"expression_statement"
+        |"for_statement"|"binary_expression" => children.append(&mut extract_statement(&child, code)),
       "identifier" => children.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::Read),
         range,
         ..AST::default()
       } ),
+      "update_expression" => children.append(&mut extract_update_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
-      "("|")"|"{"|"}"|";" => (),
-      "return"|"number_literal"|"if"|"true" => (),
+      "declaration" => children.push(extract_field_or_function(&child, code, "public")),
+      "("|")"|"{"|"}"|";"|"<"|">"|"+"|"-" => (),
+      "return"|"number_literal"|"if"|"true"|"for" => (),
+      _ => children.push(AST {
+        kind: Kind::Unhandled(child.to_sexp()),
+        range: child.byte_range(),
+        ..AST::default()
+      }),
+    }
+  }
+
+  children
+}
+
+fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
+  let mut children = vec![];
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      "identifier" => children.push(AST {
+        name: code[range.start..range.end].to_string(),
+        kind: Kind::Reference(Reference::Write),
+        range,
+        ..AST::default()
+      } ),
+      "("|")"|"{"|"}"|";"|"++" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),

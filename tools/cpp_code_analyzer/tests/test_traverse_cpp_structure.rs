@@ -67,6 +67,10 @@ int global_function(int param1) {
     return 42;
   }
 
+  for (int i=0; i<42; i++) {
+    2+40;
+  }
+
   return 42;
 }
 "#;
