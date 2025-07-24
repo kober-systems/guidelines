@@ -46,3 +46,14 @@ int function_using_global_var() {
     ]);
 }
 
+#[test]
+fn allow_usage_of_parameters() {
+    let code = r#"
+int function_using_param(int var) {
+  return var;
+}
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+

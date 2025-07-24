@@ -335,7 +335,7 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
         range: child.byte_range(),
         ..AST::default()
       }),
-      "function_declarator" => (),
+      "function_declarator" => children.append(&mut extract_parameters(&child, code)),
       "type_identifier"|";" => (),
       "compound_statement" => children.append(&mut extract_statement(&child, code)),
       "template_type" => (),
@@ -385,6 +385,65 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
   }
 
   children
+}
+
+fn extract_parameters(node: &Node, code: &str) -> Vec<AST> {
+  let mut children = vec![];
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    match child.kind() {
+      "parameter_declaration" => children.push(extract_param(&child, code)),
+      "("|")" => (),
+      "identifier" => (),
+      "parameter_list" => children.append(&mut extract_parameters(&child, code)),
+      _ => children.push(AST {
+        kind: Kind::Unhandled(child.to_sexp()),
+        range: child.byte_range(),
+        ..AST::default()
+      }),
+    }
+  }
+
+  children
+}
+
+fn extract_param(node: &Node, code: &str) -> AST {
+  let mut dependencies = vec![];
+  let mut children = vec![];
+  let mut name = "";
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      "identifier" => {
+        name = &code[range.start..range.end];
+      }
+      "primitive_type" => dependencies.push(AST {
+        name: code[range.start..range.end].to_string(),
+        kind: Kind::Reference,
+        ..AST::default()
+      }),
+      _ => children.push(AST {
+        kind: Kind::Unhandled(child.to_sexp()),
+        range: child.byte_range(),
+        ..AST::default()
+      }),
+    }
+  }
+
+  AST {
+    name: name.to_string(),
+    kind: Kind::Variable(Variable {
+      is_const: false,
+      visibility: "public".to_string(),
+    }),
+    children,
+    dependencies,
+    range: node.byte_range(),
+    ..AST::default()
+  }
 }
 
 fn parse_enum(node: &Node, code: &str) -> AST {

@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::ast::{AST, Kind, Function, LintError};
 
 pub fn check_global_codechunk(ast: &Vec<AST>, code: &str) -> Vec<LintError> {
@@ -210,19 +212,7 @@ fn get_lint_errors_for_node(input: &AST, code: &str) -> Vec<LintError> {
       errors.append(&mut check_derives(input));
       errors
     }
-    Kind::Function(_fun) => {
-      let mut errors = vec![];
-      for node in input.children.iter() {
-        errors.append(&mut get_lint_errors_for_node(&node, &code));
-      }
-      errors
-    },
-    Kind::Reference => {
-      vec![LintError {
-        message: format!("It's not allowed to use global variables ('{}'). Global variables create invisible coupling.", input.name),
-        range: input.range.clone(),
-      }]
-    }
+    Kind::Function(_fun) => get_lint_errors_for_function(input),
     Kind::Type => vec![],
     Kind::Variable(var) => {
       let mut errors = vec![];
@@ -241,3 +231,32 @@ fn get_lint_errors_for_node(input: &AST, code: &str) -> Vec<LintError> {
     _ => todo!()
   }
 }
+
+fn get_lint_errors_for_function(input: &AST) -> Vec<LintError> {
+  let mut errors = vec![];
+  let vars_in_scope: HashSet<_> = input.children.iter().filter_map(|node| match node.kind {
+    Kind::Variable(_) => Some(node.name.clone()),
+    _ => None,
+  }).collect();
+
+  for node in input.children.iter() {
+    match &node.kind {
+      Kind::Reference => {
+        if !vars_in_scope.contains(&node.name) {
+          errors.push(LintError {
+            message: format!("It's not allowed to use global variables ('{}'). Global variables create invisible coupling.", node.name),
+            range: input.range.clone(),
+          });
+        }
+      }
+      Kind::Variable(_var) => (),
+      Kind::Unhandled(element) => errors.push(LintError {
+        message: element.clone(),
+        range: input.range.clone(),
+      }),
+      _ => todo!("node {:?} not yet implemented", node.kind)
+    }
+  }
+  errors
+}
+
