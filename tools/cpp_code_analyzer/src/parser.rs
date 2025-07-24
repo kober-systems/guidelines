@@ -367,7 +367,8 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "return_statement"|"if_statement"|"condition_clause"|"compound_statement" => children.append(&mut extract_statement(&child, code)),
+      "return_statement"|"if_statement"|"condition_clause"
+        |"compound_statement"|"expression_statement" => children.append(&mut extract_statement(&child, code)),
       "identifier" => children.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::Read),
@@ -441,6 +442,18 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
   for idx in 0..node.child_count() {
     let child = node.child(idx).unwrap();
     match child.kind() {
+      "identifier" => {
+        let range = child.byte_range();
+        children.push(AST {
+          name: code[range.start..range.end].to_string(),
+          kind: Kind::Variable(Variable {
+            is_const: false,
+            visibility: "public".to_string(),
+          }),
+          range: node.byte_range(),
+          ..AST::default()
+        })
+      }
       "("|")"|"," => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
