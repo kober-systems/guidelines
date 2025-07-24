@@ -459,7 +459,6 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
 }
 
 fn extract_argument(node: &Node, code: &str) -> AST {
-  let mut dependencies = vec![];
   let mut children = vec![];
   let mut name = "";
 
@@ -488,7 +487,6 @@ fn extract_argument(node: &Node, code: &str) -> AST {
       visibility: "public".to_string(),
     }),
     children,
-    dependencies,
     range: node.byte_range(),
     ..AST::default()
   }
