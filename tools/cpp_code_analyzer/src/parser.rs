@@ -336,7 +336,7 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
         ..AST::default()
       }),
       "function_declarator" => children.append(&mut extract_parameters(&child, code)),
-      "type_identifier"|";" => (),
+      "type_identifier"|";"|"comment" => (),
       "compound_statement" => children.append(&mut extract_statement(&child, code)),
       "template_type" => (),
       _ => children.push(AST {
@@ -409,8 +409,10 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
         range,
         ..AST::default()
       } ),
+      "unary_expression"|"binary_expression" => children.append(&mut extract_statement(&child, code)),
+      "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "number_literal"|"string_literal"|"true"|"false" => (),
-      "("|")"|"{"|"}"|";"|"++"|"="|"+="|"*="|"-="|"^="|">>=" => (),
+      "("|")"|"{"|"}"|";"|"++"|"--"|"="|"+="|"*="|"-="|"^="|">>=" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
@@ -463,7 +465,7 @@ fn extract_field_expression(node: &Node, code: &str) -> Vec<AST> {
         ..AST::default()
       } ),
       "field_identifier" => (),
-      "("|")"|"{"|"}"|";"|"." => (),
+      "("|")"|"{"|"}"|";"|"."|"->" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
@@ -506,8 +508,9 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
       "identifier"|"pointer_expression" => {
         children.push(extract_argument(&child, code))
       }
+      "binary_expression" => children.append(&mut extract_statement(&child, code)),
       "("|")"|"," => (),
-      "number_literal" => (),
+      "number_literal"|"string_literal" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
