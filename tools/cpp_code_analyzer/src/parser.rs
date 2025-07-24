@@ -381,7 +381,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "declaration" => children.push(extract_field_or_function(&child, code, "public")),
       "("|")"|"{"|"}"|";"|"<"|">"|"!="|"+"|"-"|"||"|"|"
-        |"<<"|">>" => (),
+        |"<<"|">>"|"&&"|"~"|"*"|"==" => (),
       "return"|"number_literal"|"if"|"true"|"false"|"for"
         |"comment"|"else" => (),
       _ => children.push(AST {
