@@ -424,6 +424,7 @@ fn extract_parameters(node: &Node, code: &str) -> Vec<AST> {
       "parameter_declaration" => children.push(extract_param(&child, code)),
       "("|")"|"," => (),
       "identifier" => (),
+      "qualified_identifier" => (),
       "parameter_list" => children.append(&mut extract_parameters(&child, code)),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
@@ -641,7 +642,7 @@ fn get_function_name(cl: &Node, code: &str) -> String {
       "identifier" => {
         return code[range.start..range.end].to_string()
       },
-      "template_type"|"function_declarator" => {
+      "template_type"|"function_declarator"|"qualified_identifier" => {
         return get_function_name(&child, code)
       },
       _ => (),

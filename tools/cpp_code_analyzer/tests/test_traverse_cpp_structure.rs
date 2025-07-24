@@ -75,6 +75,17 @@ int global_function(int param1) {
 }
 
 #[test]
+fn parse_method_definitions() {
+    let code = r#"
+int myClass::method() {
+  return 42;
+}
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+
+#[test]
 fn parse_global_enums() {
     let code = r#"
 enum class my_enum {
