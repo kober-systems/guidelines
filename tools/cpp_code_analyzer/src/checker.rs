@@ -256,7 +256,7 @@ fn get_lint_errors_for_function(input: &AST) -> Vec<LintError> {
       Kind::Variable(_var) => (),
       Kind::Unhandled(element) => errors.push(LintError {
         message: element.clone(),
-        range: input.range.clone(),
+        range: node.range.clone(),
       }),
       _ => todo!("node {:?} not yet implemented", node.kind)
     }
