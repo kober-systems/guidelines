@@ -377,7 +377,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
         range,
         ..AST::default()
       } ),
-      "update_expression" => children.append(&mut extract_update_expression(&child, code)),
+      "update_expression"|"assignment_expression" => children.append(&mut extract_update_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "declaration" => children.push(extract_field_or_function(&child, code, "public")),
       "("|")"|"{"|"}"|";"|"<"|">"|"!="|"+"|"-"|"||"|"|"
@@ -408,7 +408,8 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
         range,
         ..AST::default()
       } ),
-      "("|")"|"{"|"}"|";"|"++" => (),
+      "number_literal"|"true"|"false" => (),
+      "("|")"|"{"|"}"|";"|"++"|"="|"+=" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),

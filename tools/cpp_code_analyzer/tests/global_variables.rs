@@ -70,3 +70,18 @@ int function_call_other(int var) {
     assert_eq!(errors, Vec::<String>::new());
 }
 
+#[test]
+fn allow_usage_of_internal_parameters() {
+    let code = r#"
+int function_defining_var() {
+  int var;
+
+  var = false;
+  var += 1;
+  return var;
+}
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+
