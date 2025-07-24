@@ -475,6 +475,7 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
         children.push(extract_argument(&child, code))
       }
       "("|")"|"," => (),
+      "number_literal" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
