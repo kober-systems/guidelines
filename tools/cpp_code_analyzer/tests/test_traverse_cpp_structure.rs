@@ -66,7 +66,7 @@ int global_function(int param1) {
   if (true || true != false) {
     return 42;
   } else {
-    return 42 | 0xff;
+    return 42 | 0xff << -(1 >> 8);
   }
 
   // comments should be ignored

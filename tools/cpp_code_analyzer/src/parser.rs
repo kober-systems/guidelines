@@ -369,7 +369,8 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
     match child.kind() {
       "return_statement"|"if_statement"|"condition_clause"
         |"compound_statement"|"expression_statement"
-        |"for_statement"|"binary_expression"|"else_clause" => children.append(&mut extract_statement(&child, code)),
+        |"for_statement"|"binary_expression"|"else_clause"
+        |"unary_expression"|"parenthesized_expression" => children.append(&mut extract_statement(&child, code)),
       "identifier" => children.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::Read),
@@ -379,7 +380,8 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "update_expression" => children.append(&mut extract_update_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "declaration" => children.push(extract_field_or_function(&child, code, "public")),
-      "("|")"|"{"|"}"|";"|"<"|">"|"!="|"+"|"-"|"||"|"|" => (),
+      "("|")"|"{"|"}"|";"|"<"|">"|"!="|"+"|"-"|"||"|"|"
+        |"<<"|">>" => (),
       "return"|"number_literal"|"if"|"true"|"false"|"for"
         |"comment"|"else" => (),
       _ => children.push(AST {
