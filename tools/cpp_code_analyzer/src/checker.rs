@@ -183,36 +183,9 @@ fn prohibit_init_function(field: &AST, class_name: &str) -> Vec<LintError> {
 fn error_message_from_ast(input: &AST, code: &str) -> Vec<LintError> {
   let mut errors = vec![];
 
-  let name = &input.name;
   match &input.kind {
     Kind::File { content } => errors.append(&mut check_global_codechunk(&input.children, &content)),
-    Kind::Class(ref cl) => {
-      if cl.is_abstract {
-        errors.append(&mut check_abstract_class(&input, &name, code));
-      } else {
-        errors.append(&mut check_derived_class(&input, &name));
-        if input.dependencies.len() == 0 {
-          errors.push(LintError {
-            message: format!("Class '{name}' must be derived from abstract interface"),
-            range: input.range.clone(),
-          });
-        }
-      }
-      errors.append(&mut check_derives(input));
-    }
-    Kind::Function(_fun) => (),
-    Kind::Type => (),
-    Kind::Variable(var) => if !var.is_const {
-      errors.push(LintError {
-        message: format!("It's not allowed to create global variables ('{}'). Global variables create invisible coupling.", input.name),
-        range: input.range.clone(),
-      });
-    },
-    Kind::Unhandled(element) => errors.push(LintError {
-      message: element.clone(),
-      range: input.range.clone(),
-    }),
-    _ => todo!()
+    _ => errors.append(&mut get_lint_errors_for_node(input, code)),
   }
 
   errors
