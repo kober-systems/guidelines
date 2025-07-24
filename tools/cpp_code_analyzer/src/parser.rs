@@ -408,8 +408,8 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
         range,
         ..AST::default()
       } ),
-      "number_literal"|"true"|"false" => (),
-      "("|")"|"{"|"}"|";"|"++"|"="|"+=" => (),
+      "number_literal"|"string_literal"|"true"|"false" => (),
+      "("|")"|"{"|"}"|";"|"++"|"="|"+="|"*="|"-="|"^="|">>=" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
