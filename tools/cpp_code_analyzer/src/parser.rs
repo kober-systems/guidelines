@@ -380,7 +380,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "declaration" => children.push(extract_field_or_function(&child, code, "public")),
       "("|")"|"{"|"}"|";"|"<"|">"|"+"|"-" => (),
-      "return"|"number_literal"|"if"|"true"|"for" => (),
+      "return"|"number_literal"|"if"|"true"|"for"|"comment" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),

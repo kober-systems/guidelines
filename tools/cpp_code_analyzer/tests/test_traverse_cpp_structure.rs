@@ -67,6 +67,7 @@ int global_function(int param1) {
     return 42;
   }
 
+  // comments should be ignored
   for (int i=0; i<42; i++) {
     2+40;
   }
