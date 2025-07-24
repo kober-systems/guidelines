@@ -379,6 +379,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       } ),
       "update_expression"|"assignment_expression" => children.append(&mut extract_update_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
+      "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "declaration" => children.push(extract_field_or_function(&child, code, "public")),
       "("|")"|"{"|"}"|";"|"<"|">"|"!="|"+"|"-"|"||"|"|"
         |"<<"|">>"|"&&"|"~"|"*"|"==" => (),
@@ -435,7 +436,34 @@ fn extract_call_expression(node: &Node, code: &str) -> Vec<AST> {
         ..AST::default()
       } ),
       "argument_list" => children.append(&mut extract_arguments(&child, code)),
+      "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "("|")"|"{"|"}"|";" => (),
+      _ => children.push(AST {
+        kind: Kind::Unhandled(child.to_sexp()),
+        range: child.byte_range(),
+        ..AST::default()
+      }),
+    }
+  }
+
+  children
+}
+
+fn extract_field_expression(node: &Node, code: &str) -> Vec<AST> {
+  let mut children = vec![];
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      "identifier" => children.push(AST {
+        name: code[range.start..range.end].to_string(),
+        kind: Kind::Reference(Reference::Read),
+        range,
+        ..AST::default()
+      } ),
+      "field_identifier" => (),
+      "("|")"|"{"|"}"|";"|"." => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),

@@ -85,3 +85,16 @@ int function_defining_var() {
     assert_eq!(errors, Vec::<String>::new());
 }
 
+#[test]
+fn prevent_usage_of_global_class_variables() {
+    let code = r#"
+int function_using_global_var() {
+  return global_class.method();
+}
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, [
+      "It's not allowed to use global variables ('global_class'). Global variables create invisible coupling.",
+    ]);
+}
+
