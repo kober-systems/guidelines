@@ -63,6 +63,10 @@ int global_function(int param1, float param2);
 fn parse_function_definitions() {
     let code = r#"
 int global_function(int param1) {
+  if (true) {
+    return 42;
+  }
+
   return 42;
 }
 "#;

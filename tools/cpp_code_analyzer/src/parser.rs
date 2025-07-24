@@ -367,15 +367,15 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "return_statement" => children.append(&mut extract_statement(&child, code)),
+      "return_statement"|"if_statement"|"condition_clause"|"compound_statement" => children.append(&mut extract_statement(&child, code)),
       "identifier" => children.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::Read),
         range,
         ..AST::default()
       } ),
-      "{"|"}"|";" => (),
-      "return"|"number_literal" => (),
+      "("|")"|"{"|"}"|";" => (),
+      "return"|"number_literal"|"if"|"true" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
