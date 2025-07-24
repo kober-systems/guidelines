@@ -279,6 +279,7 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
           kind = Kind::Function(Function {
             visibility: access_specifier.to_string(),
             is_virtual: check_pure_virtual(&field, code),
+            in_external_namespace: None,
           });
         } else {
           kind = Kind::Variable(Variable {
@@ -292,6 +293,7 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
         kind = Kind::Function(Function {
           visibility: access_specifier.to_string(),
           is_virtual: check_pure_virtual(&field, code),
+          in_external_namespace: None,
         });
       }
       ";"|"{"|"}"|"("|")"|":"|"=" => (),
@@ -323,7 +325,7 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
 }
 
 fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
-  let name = get_function_name(field, code);
+  let (name, namespace) = get_function_name(field, code);
   let mut dependencies = vec![];
   let mut children = vec![];
 
@@ -352,6 +354,7 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
     kind: Kind::Function(Function {
       is_virtual: false,
       visibility: access_specifier.to_string(),
+      in_external_namespace: namespace,
     }),
     children,
     dependencies,
@@ -696,13 +699,18 @@ fn get_class_name(cl: &Node, code: &str) -> String {
   panic!("each class must have a name!")
 }
 
-fn get_function_name(cl: &Node, code: &str) -> String {
+fn get_function_name(cl: &Node, code: &str) -> (String, Option<String>) {
+  let mut namespace = None;
+
   for idx in 0..cl.child_count() {
     let child = cl.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
       "identifier" => {
-        return code[range.start..range.end].to_string()
+        return (code[range.start..range.end].to_string(), namespace);
+      },
+      "namespace_identifier" => {
+        namespace = Some(code[range.start..range.end].to_string());
       },
       "template_type"|"function_declarator"|"qualified_identifier" => {
         return get_function_name(&child, code)

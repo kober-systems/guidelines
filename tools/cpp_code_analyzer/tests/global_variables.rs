@@ -98,3 +98,30 @@ int function_using_global_var() {
     ]);
 }
 
+#[test]
+fn allow_usage_of_class_attributes() {
+    let code = r#"
+class MyClass: public AbstractMyInterface {
+public:
+    MyClass(int x, AbstractUsedClass *used);
+    void foo() {
+      handle->method(my_private_variable);
+    }
+    int bar();
+
+private:
+    int my_private_variable = 0;
+    AbstractUsedClass *handle = nullptr;
+};
+
+int MyClass::bar() {
+  external_var += 1 + my_private_variable;
+  handle->method(my_private_variable);
+}
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, [
+      "It's not allowed to use global variables ('external_var'). Global variables create invisible coupling.",
+    ]);
+}
+

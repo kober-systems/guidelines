@@ -35,6 +35,7 @@ pub struct Variable {
 pub struct Function {
   pub is_virtual: bool,
   pub visibility: String,
+  pub in_external_namespace: Option<String>,
 }
 
 #[derive(Debug)]

@@ -1,25 +1,30 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::ast::{AST, Kind, Function, LintError, Reference};
 
 pub fn check_global_codechunk(ast: &Vec<AST>, code: &str) -> Vec<LintError> {
+  let vars = get_variables_from_all_classes(ast);
+
   let mut errors = vec![];
   for node in ast.into_iter() {
-    errors.append(&mut error_message_from_ast(&node, code));
+    errors.append(&mut error_message_from_ast(&node, code, &vars));
   }
 
   errors
 }
 
 pub fn add_lint_erros(ast: Vec<AST>) -> Vec<AST> {
+  let vars = get_variables_from_all_classes(&ast);
+
   ast.into_iter().map(|mut node| {
     match &node.kind {
       Kind::File { content } => {
         node.children = node.children.into_iter().map(|mut node| {
-          let errors = get_lint_errors_for_node(&node, &content);
+          let errors = get_lint_errors_for_node(&node, &content, &vars);
           for err in errors.into_iter() {
             node.children.push(AST {
               kind: Kind::LintError(err.message),
+              range: err.range,
               ..AST::default()
             });
           }
@@ -182,18 +187,18 @@ fn prohibit_init_function(field: &AST, class_name: &str) -> Vec<LintError> {
   errors
 }
 
-fn error_message_from_ast(input: &AST, code: &str) -> Vec<LintError> {
+fn error_message_from_ast(input: &AST, code: &str, vars: &HashMap<String, HashSet<String>>) -> Vec<LintError> {
   let mut errors = vec![];
 
   match &input.kind {
     Kind::File { content } => errors.append(&mut check_global_codechunk(&input.children, &content)),
-    _ => errors.append(&mut get_lint_errors_for_node(input, code)),
+    _ => errors.append(&mut get_lint_errors_for_node(input, code, vars)),
   }
 
   errors
 }
 
-fn get_lint_errors_for_node(input: &AST, code: &str) -> Vec<LintError> {
+fn get_lint_errors_for_node(input: &AST, code: &str, vars: &HashMap<String, HashSet<String>>) -> Vec<LintError> {
   let name = &input.name;
   match &input.kind {
     Kind::Class(ref cl) => {
@@ -212,7 +217,12 @@ fn get_lint_errors_for_node(input: &AST, code: &str) -> Vec<LintError> {
       errors.append(&mut check_derives(input));
       errors
     }
-    Kind::Function(_fun) => get_lint_errors_for_function(input),
+    Kind::Function(fun) => {
+      match &fun.in_external_namespace {
+        None => get_lint_errors_for_function(input, &HashSet::default()),
+        Some(namespace) => get_lint_errors_for_function(input, vars.get(namespace).unwrap_or(&HashSet::default())),
+      }
+    },
     Kind::Type => vec![],
     Kind::Variable(var) => {
       let mut errors = vec![];
@@ -232,7 +242,7 @@ fn get_lint_errors_for_node(input: &AST, code: &str) -> Vec<LintError> {
   }
 }
 
-fn get_lint_errors_for_function(input: &AST) -> Vec<LintError> {
+fn get_lint_errors_for_function(input: &AST, class_vars: &HashSet<String>) -> Vec<LintError> {
   let mut errors = vec![];
   let vars_in_scope: HashSet<_> = input.children.iter().filter_map(|node| match node.kind {
     Kind::Variable(_) => Some(node.name.clone()),
@@ -244,7 +254,7 @@ fn get_lint_errors_for_function(input: &AST) -> Vec<LintError> {
       Kind::Reference(ref_kind) => {
         use Reference::*;
         match ref_kind {
-          Read|Write => if !vars_in_scope.contains(&node.name) {
+          Read|Write => if !vars_in_scope.contains(&node.name) && !class_vars.contains(&node.name) {
             errors.push(LintError {
               message: format!("It's not allowed to use global variables ('{}'). Global variables create invisible coupling.", node.name),
               range: node.range.clone(),
@@ -264,3 +274,25 @@ fn get_lint_errors_for_function(input: &AST) -> Vec<LintError> {
   errors
 }
 
+fn get_variables_from_all_classes(ast: &Vec<AST>) -> HashMap<String, HashSet<String>> {
+  let mut vars = HashMap::default();
+
+  for node in ast.iter() {
+    match &node.kind {
+      Kind::File { content: _ } => vars.extend(get_variables_from_all_classes(&node.children)),
+      Kind::Class(_) => {
+        let mut class_vars = HashSet::default();
+        for child in node.children.iter() {
+          match &child.kind {
+            Kind::Variable(_) => { class_vars.insert(child.name.strip_prefix("*").unwrap_or(&child.name).trim().to_string()); },
+            _ => (),
+          }
+        }
+        vars.insert(node.name.clone(), class_vars);
+      }
+      _ => (),
+    }
+  }
+
+  vars
+}
