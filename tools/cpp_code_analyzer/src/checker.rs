@@ -210,7 +210,19 @@ fn get_lint_errors_for_node(input: &AST, code: &str) -> Vec<LintError> {
       errors.append(&mut check_derives(input));
       errors
     }
-    Kind::Function(_fun) => vec![],
+    Kind::Function(_fun) => {
+      let mut errors = vec![];
+      for node in input.children.iter() {
+        errors.append(&mut get_lint_errors_for_node(&node, &code));
+      }
+      errors
+    },
+    Kind::Reference => {
+      vec![LintError {
+        message: format!("It's not allowed to use global variables ('{}'). Global variables create invisible coupling.", input.name),
+        range: input.range.clone(),
+      }]
+    }
     Kind::Type => vec![],
     Kind::Variable(var) => {
       let mut errors = vec![];

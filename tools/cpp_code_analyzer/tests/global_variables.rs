@@ -33,3 +33,16 @@ constexpr my_struct my_constant_global_struct;
     assert_eq!(errors, Vec::<String>::new());
 }
 
+#[test]
+fn prevent_usage_of_global_variables() {
+    let code = r#"
+int function_using_global_var() {
+  return global_var;
+}
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, [
+      "It's not allowed to use global variables ('global_var'). Global variables create invisible coupling.",
+    ]);
+}
+

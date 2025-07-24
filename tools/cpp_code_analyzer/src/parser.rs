@@ -323,7 +323,68 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
 }
 
 fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
-  extract_field_or_function(field, code, access_specifier)
+  let name = get_function_name(field, code);
+  let mut dependencies = vec![];
+  let mut children = vec![];
+
+  for idx in 0..field.child_count() {
+    let child = field.child(idx).unwrap();
+    match child.kind() {
+      "primitive_type" => dependencies.push(AST {
+        kind: Kind::Reference,
+        range: child.byte_range(),
+        ..AST::default()
+      }),
+      "function_declarator" => (),
+      "type_identifier"|";" => (),
+      "compound_statement" => children.append(&mut extract_statement(&child, code)),
+      "template_type" => (),
+      _ => children.push(AST {
+        kind: Kind::Unhandled(child.to_sexp()),
+        range: child.byte_range(),
+        ..AST::default()
+      }),
+    }
+  }
+
+  AST {
+    name,
+    kind: Kind::Function(Function {
+      is_virtual: false,
+      visibility: access_specifier.to_string(),
+    }),
+    children,
+    dependencies,
+    range: field.byte_range(),
+    instructions: vec![],
+  }
+}
+
+fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
+  let mut children = vec![];
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      "return_statement" => children.append(&mut extract_statement(&child, code)),
+      "identifier" => children.push(AST {
+        name: code[range.start..range.end].to_string(),
+        kind: Kind::Reference,
+        range,
+        ..AST::default()
+      } ),
+      "{"|"}"|";" => (),
+      "return"|"number_literal" => (),
+      _ => children.push(AST {
+        kind: Kind::Unhandled(child.to_sexp()),
+        range: child.byte_range(),
+        ..AST::default()
+      }),
+    }
+  }
+
+  children
 }
 
 fn parse_enum(node: &Node, code: &str) -> AST {
@@ -426,6 +487,23 @@ fn get_class_name(cl: &Node, code: &str) -> String {
     }
   }
   panic!("each class must have a name!")
+}
+
+fn get_function_name(cl: &Node, code: &str) -> String {
+  for idx in 0..cl.child_count() {
+    let child = cl.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      "identifier" => {
+        return code[range.start..range.end].to_string()
+      },
+      "template_type"|"function_declarator" => {
+        return get_function_name(&child, code)
+      },
+      _ => (),
+    }
+  }
+  panic!("each function must have a name!")
 }
 
 fn check_is_const(node: &Node, code: &str) -> bool {
