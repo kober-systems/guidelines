@@ -14,7 +14,7 @@ pub enum Kind {
   Class(Class),
   Function(Function),
   Variable(Variable),
-  Reference,
+  Reference(Reference),
   Type,
   Unhandled(String),
   LintError(String),
@@ -35,6 +35,15 @@ pub struct Variable {
 pub struct Function {
   pub is_virtual: bool,
   pub visibility: String,
+}
+
+#[derive(Debug)]
+pub enum  Reference {
+  TypeRead,
+  Read,
+  Write,
+  Call,
+  Depend,
 }
 
 pub struct LintError {

@@ -241,7 +241,7 @@ fn get_lint_errors_for_function(input: &AST) -> Vec<LintError> {
 
   for node in input.children.iter() {
     match &node.kind {
-      Kind::Reference => {
+      Kind::Reference(_) => {
         if !vars_in_scope.contains(&node.name) {
           errors.push(LintError {
             message: format!("It's not allowed to use global variables ('{}'). Global variables create invisible coupling.", node.name),

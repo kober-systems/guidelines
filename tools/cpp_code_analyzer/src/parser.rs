@@ -1,4 +1,4 @@
-use crate::ast::{Class, Function, Kind, LintInstruction, Variable, AST};
+use crate::ast::{Class, Function, Kind, LintInstruction, Reference, Variable, AST};
 use tree_sitter::{Node, Parser};
 
 pub fn parse_cpp_chunc(name: &str, input: &str) -> AST {
@@ -73,7 +73,7 @@ fn parse_include(node: &Node, code: &str) -> AST {
 
   AST {
     name: name.to_string(),
-    kind: Kind::Reference,
+    kind: Kind::Reference(Reference::Depend),
     children,
     range: node.byte_range(),
     ..AST::default()
@@ -182,13 +182,13 @@ fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<AST>, Ve
     match child.kind() {
       "type_identifier" => derived_from.push(AST {
         name: code[range.start..range.end].to_string(),
-        kind: Kind::Reference,
+        kind: Kind::Reference(Reference::Depend),
         range: child.byte_range(),
         ..AST::default()
       }),
       "template_type" => derived_from.push(AST {
         name: code[range.start..range.end].to_string(),
-        kind: Kind::Reference,
+        kind: Kind::Reference(Reference::Depend),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -331,7 +331,7 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
     let child = field.child(idx).unwrap();
     match child.kind() {
       "primitive_type" => dependencies.push(AST {
-        kind: Kind::Reference,
+        kind: Kind::Reference(Reference::TypeRead),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -370,7 +370,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "return_statement" => children.append(&mut extract_statement(&child, code)),
       "identifier" => children.push(AST {
         name: code[range.start..range.end].to_string(),
-        kind: Kind::Reference,
+        kind: Kind::Reference(Reference::Read),
         range,
         ..AST::default()
       } ),
@@ -422,7 +422,7 @@ fn extract_param(node: &Node, code: &str) -> AST {
       }
       "primitive_type" => dependencies.push(AST {
         name: code[range.start..range.end].to_string(),
-        kind: Kind::Reference,
+        kind: Kind::Reference(Reference::TypeRead),
         ..AST::default()
       }),
       _ => children.push(AST {
