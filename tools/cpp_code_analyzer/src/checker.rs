@@ -247,7 +247,7 @@ fn get_lint_errors_for_function(input: &AST) -> Vec<LintError> {
           Read|Write => if !vars_in_scope.contains(&node.name) {
             errors.push(LintError {
               message: format!("It's not allowed to use global variables ('{}'). Global variables create invisible coupling.", node.name),
-              range: input.range.clone(),
+              range: node.range.clone(),
             });
           }
           Call|TypeRead|Depend => (),
