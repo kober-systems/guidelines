@@ -2,9 +2,9 @@ use std::collections::{HashMap, HashSet};
 
 use crate::ast::{AST, Kind, Function, LintError, Reference};
 
-pub fn check_global_codechunk(ast: &Vec<AST>, code: &str) -> Vec<LintError> {
+pub fn check_global_codechunk(ast: &Vec<AST>) -> Vec<LintError> {
   let vars = get_variables_from_all_classes(ast);
-  error_message_from_global_codechunk(ast, code, &vars)
+  error_message_from_global_codechunk(ast, "", &vars)
 }
 
 fn error_message_from_global_codechunk(ast: &Vec<AST>, code: &str, vars: &HashMap<String, HashSet<String>>) -> Vec<LintError> {
