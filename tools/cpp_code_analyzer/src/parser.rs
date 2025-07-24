@@ -374,8 +374,35 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
         range,
         ..AST::default()
       } ),
+      "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "("|")"|"{"|"}"|";" => (),
       "return"|"number_literal"|"if"|"true" => (),
+      _ => children.push(AST {
+        kind: Kind::Unhandled(child.to_sexp()),
+        range: child.byte_range(),
+        ..AST::default()
+      }),
+    }
+  }
+
+  children
+}
+
+fn extract_call_expression(node: &Node, code: &str) -> Vec<AST> {
+  let mut children = vec![];
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      "identifier" => children.push(AST {
+        name: code[range.start..range.end].to_string(),
+        kind: Kind::Reference(Reference::Call),
+        range,
+        ..AST::default()
+      } ),
+      "argument_list" => children.append(&mut extract_arguments(&child, code)),
+      "("|")"|"{"|"}"|";" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
@@ -397,6 +424,24 @@ fn extract_parameters(node: &Node, code: &str) -> Vec<AST> {
       "("|")"|"," => (),
       "identifier" => (),
       "parameter_list" => children.append(&mut extract_parameters(&child, code)),
+      _ => children.push(AST {
+        kind: Kind::Unhandled(child.to_sexp()),
+        range: child.byte_range(),
+        ..AST::default()
+      }),
+    }
+  }
+
+  children
+}
+
+fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
+  let mut children = vec![];
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    match child.kind() {
+      "("|")"|"," => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),

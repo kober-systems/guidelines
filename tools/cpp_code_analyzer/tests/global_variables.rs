@@ -57,3 +57,14 @@ int function_using_param(int var, float var2) {
     assert_eq!(errors, Vec::<String>::new());
 }
 
+#[test]
+fn allow_calling_external_functions() {
+    let code = r#"
+int function_call_other() {
+  return some_external_function();
+}
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+

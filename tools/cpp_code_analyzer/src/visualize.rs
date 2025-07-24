@@ -130,7 +130,7 @@ fn extract_node(input: &AST, code: &str, base: GraphData) -> GraphData {
       }
       base
     },
-    Kind::Type|Kind::Reference|Kind::Variable(_) => {
+    Kind::Type|Kind::Reference(_)|Kind::Variable(_) => {
       base.nodes.insert(input.name.clone(), Entity {
         kind: get_entity_type(&input).to_string(),
         name: input.name.clone(),
@@ -202,7 +202,7 @@ fn get_entity_type(input: &AST) -> &str {
     Kind::Function(_fun) => "F",
     Kind::Type => "T",
     Kind::Variable(_var) => "V",
-    Kind::Reference => "Ref",
+    Kind::Reference(_reftype) => "Ref",
     //Kind::Unhandled(_element) => (),
     _ => todo!()
   }

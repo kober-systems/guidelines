@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::ast::{AST, Kind, Function, LintError};
+use crate::ast::{AST, Kind, Function, LintError, Reference};
 
 pub fn check_global_codechunk(ast: &Vec<AST>, code: &str) -> Vec<LintError> {
   let mut errors = vec![];
@@ -241,12 +241,16 @@ fn get_lint_errors_for_function(input: &AST) -> Vec<LintError> {
 
   for node in input.children.iter() {
     match &node.kind {
-      Kind::Reference(_) => {
-        if !vars_in_scope.contains(&node.name) {
-          errors.push(LintError {
-            message: format!("It's not allowed to use global variables ('{}'). Global variables create invisible coupling.", node.name),
-            range: input.range.clone(),
-          });
+      Kind::Reference(ref_kind) => {
+        use Reference::*;
+        match ref_kind {
+          Read|Write => if !vars_in_scope.contains(&node.name) {
+            errors.push(LintError {
+              message: format!("It's not allowed to use global variables ('{}'). Global variables create invisible coupling.", node.name),
+              range: input.range.clone(),
+            });
+          }
+          Call|TypeRead|Depend => (),
         }
       }
       Kind::Variable(_var) => (),
