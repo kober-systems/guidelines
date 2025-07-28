@@ -76,9 +76,11 @@ fn allow_usage_of_internal_parameters() {
     let code = r#"
 int function_defining_var() {
   int var;
+  float v2, v3, v4;
 
   var = false;
   var += 1;
+  var -= v2 * v3 / v4;
   return var;
 }
 "#;

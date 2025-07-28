@@ -24,7 +24,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
     let child = cl.child(idx).unwrap();
     match child.kind() {
       "class_specifier" => base.children.push(extract_class(&child, code)),
-      "declaration" => base.children.push(extract_declaration(&child, code, "public")),
+      "declaration" => base.children.append(&mut extract_declaration(&child, code, "public")),
       "preproc_ifdef"|"preproc_def"|"namespace_definition"
         |"declaration_list"|"preproc_if"|"preproc_elif"
         |"preproc_else" => parse_global_codechunk(base, &child, code),
@@ -156,7 +156,7 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
       "access_specifier" => {
         access_specifier = &code[range.start..range.end];
       }
-      "declaration" => children.push(extract_declaration(&child, code, access_specifier)),
+      "declaration" => children.append(&mut extract_declaration(&child, code, access_specifier)),
       "field_declaration" => children.push(extract_field(&child, code, access_specifier)),
       "function_definition" => children.push(extract_function_definition(&child, code, access_specifier)),
       "type_definition" => children.push(parse_struct(&child, code)),
@@ -254,48 +254,54 @@ fn check_is_destructor(node: &Node) -> bool {
   return false;
 }
 
-fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> AST {
-  let mut errors = vec![];
+fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<AST> {
+  let mut children = vec![];
 
-  let mut parsed_element: Option<AST> = None;
-  let mut name = "".to_string();
-  let mut kind = Kind::Unhandled(format!("extract_field_or_function: {}", field.to_sexp()));
   for idx in 0..field.child_count() {
     let child = field.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
       "identifier"|"array_declarator" => {
-        name = get_variable_name(&child, code);
-        kind = Kind::Variable(Variable {
-          visibility: access_specifier.to_string(),
-          is_const: check_is_const(&field.parent().unwrap(), code),
+        children.push(AST {
+          name: get_variable_name(&child, code),
+          kind: Kind::Variable(Variable {
+            visibility: access_specifier.to_string(),
+            is_const: check_is_const(&field.parent().unwrap(), code),
+          }),
+          range,
+          ..AST::default()
         });
       }
       "init_declarator" => {
-        parsed_element = Some(extract_declaration(&child, code, access_specifier))
+        children.append(&mut extract_declaration(&child, code, access_specifier));
       },
       "pointer_declarator" => {
-        name = code[range.start..range.end].to_string();
-        if name.contains("(") {
-          kind = Kind::Function(Function {
-            visibility: access_specifier.to_string(),
-            is_virtual: check_pure_virtual(&field, code),
-            in_external_namespace: None,
-          });
-        } else {
-          kind = Kind::Variable(Variable {
-            visibility: access_specifier.to_string(),
-            is_const: check_is_const(&field.parent().unwrap(), code),
-          });
-        }
+        let name = &code[range.start..range.end];
+        children.push(AST {
+          name: name.to_string(),
+          kind: if name.contains("(") {
+            Kind::Function(Function {
+              visibility: access_specifier.to_string(),
+              is_virtual: check_pure_virtual(&field, code),
+              in_external_namespace: None,
+            })
+          } else {
+            Kind::Variable(Variable {
+              visibility: access_specifier.to_string(),
+              is_const: check_is_const(&field.parent().unwrap(), code),
+            })
+          },
+          range,
+          ..AST::default()
+        });
       }
       "function_declarator" => {
-        return extract_function_definition(&field, code, access_specifier) ;
+        children.push(extract_function_definition(&field, code, access_specifier));
       }
-      ";"|"{"|"}"|"("|")"|":"|"=" => (),
-      "primitive_type"|"number_literal"
-        |"type_qualifier" => (),
-      _ => errors.push(AST {
+      ";"|"{"|"}"|"("|")"|":"|"="|"," => (),
+      "primitive_type"|"number_literal"|"string_literal"|"type_identifier"
+        |"type_qualifier"|"storage_class_specifier" => (),
+      "initializer_list" => (),
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
         ..AST::default()
@@ -303,18 +309,7 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> AST 
     }
   }
 
-  if let Some(mut ast) = parsed_element {
-    errors.append(&mut ast.children);
-    name = ast.name;
-    kind = ast.kind;
-  }
-  AST {
-    name,
-    kind,
-    children: errors,
-    range: field.byte_range(),
-    ..AST::default()
-  }
+  children
 }
 
 fn extract_function_definition(field: &Node, code: &str, access_specifier: &str) -> AST {
@@ -476,11 +471,11 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "update_expression"|"assignment_expression" => children.append(&mut extract_update_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
-      "declaration" => children.push(extract_declaration(&child, code, "public")),
+      "declaration" => children.append(&mut extract_declaration(&child, code, "public")),
       "("|")"|"{"|"}"|";"|"<"|">"|"!="|"<="|">="|"+"|"-"|"||"|"|"
-        |"<<"|">>"|"&&"|"~"|"*"|"=="|"["|"]"|"!" => (),
+        |"<<"|">>"|"&&"|"~"|"*"|"=="|"["|"]"|"!"|"/" => (),
       "return"|"number_literal"|"if"|"true"|"false"|"for"
-        |"comment"|"else"|"while" => (),
+        |"comment"|"else"|"while"|"string_literal" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
