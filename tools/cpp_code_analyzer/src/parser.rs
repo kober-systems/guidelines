@@ -264,7 +264,7 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
     let child = field.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "field_identifier"|"identifier"|"array_declarator" => {
+      "identifier"|"array_declarator" => {
         name = get_variable_name(&child, code);
         kind = Kind::Variable(Variable {
           visibility: access_specifier.to_string(),
@@ -295,9 +295,6 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
       ";"|"{"|"}"|"("|")"|":"|"=" => (),
       "primitive_type"|"number_literal"
         |"type_qualifier" => (),
-      "enum_specifier" => {
-        parsed_element = Some(parse_enum(&child, code));
-      }
       _ => errors.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
@@ -338,7 +335,7 @@ fn extract_function_definition(field: &Node, code: &str, access_specifier: &str)
         });
       }
       ";"|"{"|"}"|"("|")"|":"|"=" => (),
-      "virtual"|"primitive_type"|"number_literal"
+      "primitive_type"|"number_literal"
         |"type_qualifier" => (),
       _ => errors.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
@@ -367,7 +364,7 @@ fn extract_field(field: &Node, code: &str, access_specifier: &str) -> AST {
     let child = field.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "field_identifier"|"identifier"|"array_declarator" => {
+      "field_identifier" => {
         name = code[range.start..range.end].to_string();
         kind = Kind::Variable(Variable {
           visibility: access_specifier.to_string(),
@@ -393,8 +390,6 @@ fn extract_field(field: &Node, code: &str, access_specifier: &str) -> AST {
         return extract_function_definition(&field, code, access_specifier) ;
       }
       ";"|"{"|"}"|"("|")"|":"|"=" => (),
-      "virtual"|"primitive_type"|"number_literal"
-        |"type_qualifier" => (),
       "enum_specifier" => {
         parsed_element = Some(parse_enum(&child, code));
       }
