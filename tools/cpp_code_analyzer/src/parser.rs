@@ -463,7 +463,8 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
         |"for_statement"|"binary_expression"|"else_clause"
         |"unary_expression"|"parenthesized_expression"
         |"subscript_expression"|"subscript_argument_list"
-        |"cast_expression"|"while_statement" => children.append(&mut extract_statement(&child, code)),
+        |"cast_expression"|"while_statement"
+        |"switch_statement"|"case_statement" => children.append(&mut extract_statement(&child, code)),
       "identifier" => children.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::Read),
@@ -476,9 +477,10 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "declaration" => children.append(&mut extract_declaration(&child, code, "public")),
       "("|")"|"{"|"}"|";"|"<"|">"|"!="|"<="|">="|"+"|"-"|"||"|"|"
-        |"<<"|">>"|"&&"|"&"|"~"|"*"|"=="|"["|"]"|"!"|"/"|"%" => (),
+        |"<<"|">>"|"&&"|"&"|"~"|"*"|"=="|"["|"]"|"!"|"/"|"%"|":" => (),
       "return"|"number_literal"|"if"|"true"|"false"|"for"
-        |"comment"|"else"|"while"|"string_literal" => (),
+        |"comment"|"else"|"while"|"string_literal"|"switch"
+        |"case"|"break_statement"|"default" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),

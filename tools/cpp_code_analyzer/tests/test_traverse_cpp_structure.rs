@@ -78,6 +78,14 @@ int global_function(int param1) {
     return 43 - 1;
   }
 
+  switch (param1) {
+    case 0:
+      45 - 2;
+      break;
+    default:
+      return 2 * 21;
+  }
+
   return 42;
 }
 "#;
