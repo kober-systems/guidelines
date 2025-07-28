@@ -302,6 +302,7 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
       "primitive_type"|"number_literal"|"string_literal"|"type_identifier"
         |"type_qualifier"|"storage_class_specifier" => (),
       "initializer_list" => (),
+      _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
         ..AST::default()
@@ -473,7 +474,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "declaration" => children.append(&mut extract_declaration(&child, code, "public")),
       "("|")"|"{"|"}"|";"|"<"|">"|"!="|"<="|">="|"+"|"-"|"||"|"|"
-        |"<<"|">>"|"&&"|"~"|"*"|"=="|"["|"]"|"!"|"/" => (),
+        |"<<"|">>"|"&&"|"&"|"~"|"*"|"=="|"["|"]"|"!"|"/" => (),
       "return"|"number_literal"|"if"|"true"|"false"|"for"
         |"comment"|"else"|"while"|"string_literal" => (),
       _ => children.push(AST {
@@ -503,8 +504,10 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
       "unary_expression"|"binary_expression"|"subscript_expression"
         |"cast_expression" => children.append(&mut extract_statement(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
-      "number_literal"|"string_literal"|"true"|"false" => (),
-      "("|")"|"{"|"}"|";"|"++"|"--"|"="|"+="|"*="|"-="|"^="|">>=" => (),
+      "number_literal"|"string_literal"|"true"|"false"
+        |"sizeof_expression"|"null" => (),
+      "("|")"|"{"|"}"|";"|"++"|"--"|"="|"+="|"*="|"-="|"^="
+        |">>="|"|="|"&=" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
