@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::{fs, io};
 use std::path::{Path, PathBuf};
 
@@ -8,7 +9,7 @@ use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use codespan_reporting::term;
 use cpp_code_analyzer::ast::{Kind, AST};
 use cpp_code_analyzer::visualize::visualize;
-use cpp_code_analyzer::{analyze_cpp_errors, parser};
+use cpp_code_analyzer::{checker, parser};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -33,36 +34,33 @@ fn main() -> io::Result<()> {
 }
 
 fn print_all_errors(ast: &Vec<AST>) {
-  let mut all_errs_cnt = 0;
+  let mut files = SimpleFiles::new();
+  let mut mapping = HashMap::<String, usize>::default();
+
   for ast in ast.iter() {
     if let Kind::File { content } = &ast.kind {
-      all_errs_cnt += print_errors(&content, &ast.name);
+      let file_id = files.add(&ast.name, content);
+      mapping.insert(ast.name.clone(), file_id);
     }
   }
 
-  println!("found {all_errs_cnt} errors");
-}
+  let errors = checker::check_global_codechunk(&ast);
 
-fn print_errors(input: &str, filepath: &str) -> usize {
-    let errors = analyze_cpp_errors(&filepath, &input);
+  let writer = StandardStream::stderr(ColorChoice::Always);
+  let config = codespan_reporting::term::Config::default();
 
-    let writer = StandardStream::stderr(ColorChoice::Always);
-    let config = codespan_reporting::term::Config::default();
+  for error in errors.iter() {
+    let file_id = mapping.get(&error.file_path).unwrap_or(&0);
+    let diagnostic = Diagnostic::error()
+        .with_message(&error.message)
+        .with_labels(vec![
+            Label::primary(*file_id, error.range.start..error.range.end),
+        ]);
 
-    let mut files = SimpleFiles::new();
-    let file_id = files.add(&filepath, input);
+    term::emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
+  }
 
-    for error in errors.iter() {
-      let diagnostic = Diagnostic::error()
-          .with_message(&error.message)
-          .with_labels(vec![
-              Label::primary(file_id, error.range.start..error.range.end),
-          ]);
-
-      term::emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
-    }
-
-    errors.len()
+  println!("found {} errors", errors.len());
 }
 
 fn to_svg(ast: Vec<AST>) {
