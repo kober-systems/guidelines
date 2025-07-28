@@ -24,7 +24,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
     let child = cl.child(idx).unwrap();
     match child.kind() {
       "class_specifier" => base.children.push(extract_class(&child, code)),
-      "declaration" => base.children.push(extract_field_or_function(&child, code, "public")),
+      "declaration" => base.children.push(extract_declaration(&child, code, "public")),
       "preproc_ifdef"|"preproc_def"|"namespace_definition"
         |"declaration_list"|"preproc_if"|"preproc_elif"
         |"preproc_else" => parse_global_codechunk(base, &child, code),
@@ -156,7 +156,7 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
       "access_specifier" => {
         access_specifier = &code[range.start..range.end];
       }
-      "declaration" => children.push(extract_field_or_function(&child, code, access_specifier)),
+      "declaration" => children.push(extract_declaration(&child, code, access_specifier)),
       "field_declaration" => children.push(extract_field(&child, code, access_specifier)),
       "function_definition" => children.push(extract_function_definition(&child, code, access_specifier)),
       "type_definition" => children.push(parse_struct(&child, code)),
@@ -254,7 +254,7 @@ fn check_is_destructor(node: &Node) -> bool {
   return false;
 }
 
-fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -> AST {
+fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> AST {
   let mut errors = vec![];
 
   let mut parsed_element: Option<AST> = None;
@@ -272,7 +272,7 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
         });
       }
       "init_declarator" => {
-        parsed_element = Some(extract_field_or_function(&child, code, access_specifier))
+        parsed_element = Some(extract_declaration(&child, code, access_specifier))
       },
       "pointer_declarator" => {
         name = code[range.start..range.end].to_string();
@@ -476,7 +476,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "update_expression"|"assignment_expression" => children.append(&mut extract_update_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
-      "declaration" => children.push(extract_field_or_function(&child, code, "public")),
+      "declaration" => children.push(extract_declaration(&child, code, "public")),
       "("|")"|"{"|"}"|";"|"<"|">"|"!="|"<="|">="|"+"|"-"|"||"|"|"
         |"<<"|">>"|"&&"|"~"|"*"|"=="|"["|"]"|"!" => (),
       "return"|"number_literal"|"if"|"true"|"false"|"for"
