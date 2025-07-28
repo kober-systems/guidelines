@@ -156,8 +156,7 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
       "access_specifier" => {
         access_specifier = &code[range.start..range.end];
       }
-      "declaration" => children.append(&mut extract_declaration(&child, code, access_specifier)),
-      "field_declaration" => children.push(extract_field(&child, code, access_specifier)),
+      "declaration"|"field_declaration" => children.append(&mut extract_declaration(&child, code, access_specifier)),
       "function_definition" => children.push(extract_function_definition(&child, code, access_specifier)),
       "type_definition" => children.push(parse_struct(&child, code)),
       "type_identifier"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
@@ -261,7 +260,7 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
     let child = field.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "identifier"|"array_declarator" => {
+      "identifier"|"array_declarator"|"field_identifier" => {
         children.push(AST {
           name: get_variable_name(&child, code),
           kind: Kind::Variable(Variable {
@@ -298,10 +297,13 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
       "function_declarator" => {
         children.push(extract_function_definition(&field, code, access_specifier));
       }
+      "enum_specifier" => {
+        children.push(parse_enum(&child, code));
+      }
       ";"|"{"|"}"|"("|")"|":"|"="|"," => (),
       "primitive_type"|"number_literal"|"string_literal"|"type_identifier"
         |"type_qualifier"|"storage_class_specifier"|"attribute_specifier"
-        |"sizeof_expression" => (),
+        |"sizeof_expression"|"sized_type_specifier"|"virtual"|"null" => (),
       "initializer_list" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
@@ -342,67 +344,6 @@ fn extract_function_definition(field: &Node, code: &str, access_specifier: &str)
     }
   }
 
-  AST {
-    name,
-    kind,
-    children: errors,
-    range: field.byte_range(),
-    ..AST::default()
-  }
-}
-
-fn extract_field(field: &Node, code: &str, access_specifier: &str) -> AST {
-  let mut errors = vec![];
-
-  let mut parsed_element: Option<AST> = None;
-  let mut name = "".to_string();
-  let mut kind = Kind::Unhandled(format!("extract_field: {}", field.to_sexp()));
-  for idx in 0..field.child_count() {
-    let child = field.child(idx).unwrap();
-    let range = child.byte_range();
-    match child.kind() {
-      "field_identifier" => {
-        name = code[range.start..range.end].to_string();
-        kind = Kind::Variable(Variable {
-          visibility: access_specifier.to_string(),
-          is_const: check_is_const(&field.parent().unwrap(), code),
-        });
-      }
-      "pointer_declarator" => {
-        name = code[range.start..range.end].to_string();
-        if name.contains("(") {
-          kind = Kind::Function(Function {
-            visibility: access_specifier.to_string(),
-            is_virtual: check_pure_virtual(&field, code),
-            in_external_namespace: None,
-          });
-        } else {
-          kind = Kind::Variable(Variable {
-            visibility: access_specifier.to_string(),
-            is_const: check_is_const(&field.parent().unwrap(), code),
-          });
-        }
-      }
-      "function_declarator" => {
-        return extract_function_definition(&field, code, access_specifier) ;
-      }
-      ";"|"{"|"}"|"("|")"|":"|"=" => (),
-      "enum_specifier" => {
-        parsed_element = Some(parse_enum(&child, code));
-      }
-      _ => errors.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
-        range: child.byte_range(),
-        ..AST::default()
-      }),
-    }
-  }
-
-  if let Some(mut ast) = parsed_element {
-    errors.append(&mut ast.children);
-    name = ast.name;
-    kind = ast.kind;
-  }
   AST {
     name,
     kind,
@@ -804,7 +745,7 @@ fn get_class_name(cl: &Node, code: &str) -> String {
 
 fn get_variable_name(node: &Node, code: &str) -> String {
   match node.kind() {
-    "identifier" => {
+    "identifier"|"field_identifier" => {
       let range = node.byte_range();
       return code[range.start..range.end].to_string()
     },
@@ -812,7 +753,7 @@ fn get_variable_name(node: &Node, code: &str) -> String {
       for idx in 0..node.child_count() {
         let child = node.child(idx).unwrap();
         match child.kind() {
-          "identifier"|"array_declarator" => {
+          "identifier"|"field_identifier"|"array_declarator" => {
             return get_variable_name(&child, code)
           },
           _ => (),
