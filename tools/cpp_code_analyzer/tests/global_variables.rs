@@ -128,3 +128,15 @@ int MyClass::bar() {
     ]);
 }
 
+#[test]
+fn allow_reading_constants() {
+    let code = r#"
+constexpr int i = 42;
+
+int function_call_other(int var) {
+  return i;
+}
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}

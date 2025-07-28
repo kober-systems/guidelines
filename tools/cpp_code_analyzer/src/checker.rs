@@ -4,6 +4,11 @@ use crate::ast::{AST, Kind, Function, LintError, Reference};
 
 pub fn check_global_codechunk(ast: &Vec<AST>) -> Vec<LintError> {
   let vars = get_variables_from_all_classes(ast);
+  let constants = get_constants(&ast);
+  let vars = InScope {
+    constants,
+    namespaces: vars,
+  };
   let source = TextFile {
     content: "".to_string(),
     file_path: "".to_string(),
@@ -11,8 +16,7 @@ pub fn check_global_codechunk(ast: &Vec<AST>) -> Vec<LintError> {
   error_message_from_global_codechunk(ast, &source, &vars)
 }
 
-fn error_message_from_global_codechunk(ast: &Vec<AST>, code: &TextFile, vars: &HashMap<String, HashSet<String>>) -> Vec<LintError> {
-
+fn error_message_from_global_codechunk(ast: &Vec<AST>, code: &TextFile, vars: &InScope) -> Vec<LintError> {
   let mut errors = vec![];
   for node in ast.into_iter() {
     errors.append(&mut error_message_from_ast(&node, code, &vars));
@@ -23,6 +27,11 @@ fn error_message_from_global_codechunk(ast: &Vec<AST>, code: &TextFile, vars: &H
 
 pub fn add_lint_erros(ast: Vec<AST>) -> Vec<AST> {
   let vars = get_variables_from_all_classes(&ast);
+  let constants = get_constants(&ast);
+  let vars = InScope {
+    constants,
+    namespaces: vars,
+  };
 
   ast.into_iter().map(|mut node| {
     match &node.kind {
@@ -212,7 +221,7 @@ fn prohibit_init_function(field: &AST, class_name: &str, code: &TextFile) -> Vec
   errors
 }
 
-fn error_message_from_ast(input: &AST, code: &TextFile, vars: &HashMap<String, HashSet<String>>) -> Vec<LintError> {
+fn error_message_from_ast(input: &AST, code: &TextFile, vars: &InScope) -> Vec<LintError> {
   let mut errors = vec![];
 
   match &input.kind {
@@ -229,7 +238,7 @@ fn error_message_from_ast(input: &AST, code: &TextFile, vars: &HashMap<String, H
   errors
 }
 
-fn get_lint_errors_for_node(input: &AST, code: &TextFile, vars: &HashMap<String, HashSet<String>>) -> Vec<LintError> {
+fn get_lint_errors_for_node(input: &AST, code: &TextFile, vars: &InScope) -> Vec<LintError> {
   let name = &input.name;
   match &input.kind {
     Kind::Class(ref cl) => {
@@ -251,8 +260,8 @@ fn get_lint_errors_for_node(input: &AST, code: &TextFile, vars: &HashMap<String,
     }
     Kind::Function(fun) => {
       match &fun.in_external_namespace {
-        None => get_lint_errors_for_function(input, &HashSet::default(), code),
-        Some(namespace) => get_lint_errors_for_function(input, vars.get(namespace).unwrap_or(&HashSet::default()), code),
+        None => get_lint_errors_for_function(input, &vars.constants, code),
+        Some(namespace) => get_lint_errors_for_function(input, vars.namespaces.get(namespace).unwrap_or(&HashSet::default()), code),
       }
     },
     Kind::Type => vec![],
@@ -272,7 +281,7 @@ fn get_lint_errors_for_node(input: &AST, code: &TextFile, vars: &HashMap<String,
       range: input.range.clone(),
       file_path: code.file_path.clone(),
     }],
-    _ => todo!()
+    _ => todo!("{:?}", input.kind)
   }
 }
 
@@ -307,13 +316,6 @@ fn get_lint_errors_for_function(input: &AST, class_vars: &HashSet<String>, code:
   errors
 }
 
-fn get_vars_in_scope(input: &AST) -> HashSet<String> {
-  input.children.iter().filter_map(|node| match node.kind {
-    Kind::Variable(_) => Some(node.name.strip_prefix("*").unwrap_or(&node.name).trim().to_string()),
-    _ => None,
-  }).collect()
-}
-
 fn get_variables_from_all_classes(ast: &Vec<AST>) -> HashMap<String, HashSet<String>> {
   let mut vars = HashMap::default();
 
@@ -331,7 +333,43 @@ fn get_variables_from_all_classes(ast: &Vec<AST>) -> HashMap<String, HashSet<Str
   vars
 }
 
+fn get_constants(ast: &Vec<AST>) -> HashSet<String> {
+  let mut constants = HashSet::default();
+
+  for node in ast.iter() {
+    match &node.kind {
+      Kind::File { content: _ } => constants.extend(get_constants_in_scope(node)),
+      _ => (),
+    }
+  }
+
+  constants
+}
+
+fn get_vars_in_scope(input: &AST) -> HashSet<String> {
+  input.children.iter().filter_map(|node| match node.kind {
+    Kind::Variable(_) => Some(node.name.strip_prefix("*").unwrap_or(&node.name).trim().to_string()),
+    _ => None,
+  }).collect()
+}
+
+fn get_constants_in_scope(input: &AST) -> HashSet<String> {
+  input.children.iter().filter_map(|node| match node.kind {
+    Kind::Variable(ref v) => if v.is_const {
+      Some(node.name.strip_prefix("*").unwrap_or(&node.name).trim().to_string())
+    } else {
+      None
+    }
+    _ => None,
+  }).collect()
+}
+
 struct TextFile {
   pub content: String,
   pub file_path: String,
+}
+
+struct InScope {
+  pub constants: HashSet<String>,
+  pub namespaces: HashMap<String, HashSet<String>>
 }
