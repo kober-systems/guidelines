@@ -50,6 +50,7 @@ pub enum  Reference {
 pub struct LintError {
   pub message: String,
   pub range: core::ops::Range<usize>,
+  pub file_path: String,
 }
 
 #[derive(Debug)]
