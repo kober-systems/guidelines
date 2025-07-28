@@ -373,7 +373,9 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "return_statement"|"if_statement"|"condition_clause"
         |"compound_statement"|"expression_statement"
         |"for_statement"|"binary_expression"|"else_clause"
-        |"unary_expression"|"parenthesized_expression" => children.append(&mut extract_statement(&child, code)),
+        |"unary_expression"|"parenthesized_expression"
+        |"subscript_expression"|"subscript_argument_list"
+        |"cast_expression" => children.append(&mut extract_statement(&child, code)),
       "identifier" => children.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::Read),
@@ -412,7 +414,8 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
         range,
         ..AST::default()
       } ),
-      "unary_expression"|"binary_expression" => children.append(&mut extract_statement(&child, code)),
+      "unary_expression"|"binary_expression"|"subscript_expression"
+        |"cast_expression" => children.append(&mut extract_statement(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "number_literal"|"string_literal"|"true"|"false" => (),
       "("|")"|"{"|"}"|";"|"++"|"--"|"="|"+="|"*="|"-="|"^="|">>=" => (),
@@ -486,7 +489,7 @@ fn extract_parameters(node: &Node, code: &str) -> Vec<AST> {
   for idx in 0..node.child_count() {
     let child = node.child(idx).unwrap();
     match child.kind() {
-      "parameter_declaration" => children.push(extract_param(&child, code)),
+      "parameter_declaration"|"optional_parameter_declaration" => children.push(extract_param(&child, code)),
       "("|")"|"," => (),
       "identifier" => (),
       "qualified_identifier" => (),
@@ -511,7 +514,9 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
       "identifier"|"pointer_expression" => {
         children.push(extract_argument(&child, code))
       }
-      "binary_expression" => children.append(&mut extract_statement(&child, code)),
+      "binary_expression"|"subscript_expression" => children.append(&mut extract_statement(&child, code)),
+      "field_expression" => children.append(&mut extract_field_expression(&child, code)),
+      "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "("|")"|"," => (),
       "number_literal"|"string_literal" => (),
       _ => children.push(AST {
@@ -571,7 +576,8 @@ fn extract_param(node: &Node, code: &str) -> AST {
       "identifier"|"pointer_declarator"|"reference_declarator" => {
         name = &code[range.start..range.end];
       }
-      "primitive_type" => dependencies.push(AST {
+      "primitive_type"|"type_identifier"|"struct_specifier"
+        |"function_declarator" => dependencies.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::TypeRead),
         ..AST::default()
@@ -586,10 +592,14 @@ fn extract_param(node: &Node, code: &str) -> AST {
 
   AST {
     name: name.to_string(),
-    kind: Kind::Variable(Variable {
-      is_const: false,
-      visibility: "public".to_string(),
-    }),
+    kind: if name != "" {
+      Kind::Variable(Variable {
+        is_const: false,
+        visibility: "public".to_string(),
+      })
+    } else {
+      Kind::Unhandled(format!("parameter not parsable: {}", node.to_sexp()))
+    },
     children,
     dependencies,
     range: node.byte_range(),
