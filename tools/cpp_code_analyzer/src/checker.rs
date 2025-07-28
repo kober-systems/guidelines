@@ -321,13 +321,7 @@ fn get_variables_from_all_classes(ast: &Vec<AST>) -> HashMap<String, HashSet<Str
     match &node.kind {
       Kind::File { content: _ } => vars.extend(get_variables_from_all_classes(&node.children)),
       Kind::Class(_) => {
-        let mut class_vars = HashSet::default();
-        for child in node.children.iter() {
-          match &child.kind {
-            Kind::Variable(_) => { class_vars.insert(child.name.strip_prefix("*").unwrap_or(&child.name).trim().to_string()); },
-            _ => (),
-          }
-        }
+        let class_vars = get_vars_in_scope(node);
         vars.insert(node.name.clone(), class_vars);
       }
       _ => (),
