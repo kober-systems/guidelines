@@ -265,7 +265,7 @@ fn extract_field_or_function(field: &Node, code: &str, access_specifier: &str) -
     let range = child.byte_range();
     match child.kind() {
       "field_identifier"|"identifier"|"array_declarator" => {
-        name = code[range.start..range.end].to_string();
+        name = get_variable_name(&child, code);
         kind = Kind::Variable(Variable {
           visibility: access_specifier.to_string(),
           is_const: check_is_const(&field.parent().unwrap(), code),
@@ -803,6 +803,29 @@ fn get_class_name(cl: &Node, code: &str) -> String {
     }
   }
   panic!("each class must have a name!")
+}
+
+fn get_variable_name(node: &Node, code: &str) -> String {
+  match node.kind() {
+    "identifier" => {
+      let range = node.byte_range();
+      return code[range.start..range.end].to_string()
+    },
+    "array_declarator" => {
+      for idx in 0..node.child_count() {
+        let child = node.child(idx).unwrap();
+        match child.kind() {
+          "identifier"|"array_declarator" => {
+            return get_variable_name(&child, code)
+          },
+          _ => (),
+        }
+      }
+    },
+    _ => (),
+  }
+
+  panic!("each variable must have a name!")
 }
 
 fn get_function_name(cl: &Node, code: &str) -> (String, Option<String>) {

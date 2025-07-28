@@ -14,7 +14,7 @@ char my_global_array[42];
     assert_eq!(errors, [
       "It's not allowed to create global variables ('my_global'). Global variables create invisible coupling.",
       "It's not allowed to create global variables ('my_other_global'). Global variables create invisible coupling.",
-      "It's not allowed to create global variables ('my_global_array[42]'). Global variables create invisible coupling.",
+      "It's not allowed to create global variables ('my_global_array'). Global variables create invisible coupling.",
     ]);
 }
 
