@@ -74,7 +74,7 @@ int global_function(int param1) {
     2+40;
   }
 
-  while (true) {
+  while (1 <= 2) {
     return 43 - 1;
   }
 
