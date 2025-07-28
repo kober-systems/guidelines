@@ -278,10 +278,7 @@ fn get_lint_errors_for_node(input: &AST, code: &TextFile, vars: &HashMap<String,
 
 fn get_lint_errors_for_function(input: &AST, class_vars: &HashSet<String>, code: &TextFile) -> Vec<LintError> {
   let mut errors = vec![];
-  let vars_in_scope: HashSet<_> = input.children.iter().filter_map(|node| match node.kind {
-    Kind::Variable(_) => Some(node.name.clone()),
-    _ => None,
-  }).collect();
+  let vars_in_scope = get_vars_in_scope(input);
 
   for node in input.children.iter() {
     match &node.kind {
@@ -308,6 +305,13 @@ fn get_lint_errors_for_function(input: &AST, class_vars: &HashSet<String>, code:
     }
   }
   errors
+}
+
+fn get_vars_in_scope(input: &AST) -> HashSet<String> {
+  input.children.iter().filter_map(|node| match node.kind {
+    Kind::Variable(_) => Some(node.name.strip_prefix("*").unwrap_or(&node.name).trim().to_string()),
+    _ => None,
+  }).collect()
 }
 
 fn get_variables_from_all_classes(ast: &Vec<AST>) -> HashMap<String, HashSet<String>> {

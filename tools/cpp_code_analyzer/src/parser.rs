@@ -568,7 +568,7 @@ fn extract_param(node: &Node, code: &str) -> AST {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "identifier" => {
+      "identifier"|"pointer_declarator"|"reference_declarator" => {
         name = &code[range.start..range.end];
       }
       "primitive_type" => dependencies.push(AST {
