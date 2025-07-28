@@ -466,7 +466,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
         |"for_statement"|"binary_expression"|"else_clause"
         |"unary_expression"|"parenthesized_expression"
         |"subscript_expression"|"subscript_argument_list"
-        |"cast_expression" => children.append(&mut extract_statement(&child, code)),
+        |"cast_expression"|"while_statement" => children.append(&mut extract_statement(&child, code)),
       "identifier" => children.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::Read),
@@ -480,7 +480,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "("|")"|"{"|"}"|";"|"<"|">"|"!="|"+"|"-"|"||"|"|"
         |"<<"|">>"|"&&"|"~"|"*"|"=="|"["|"]"|"!" => (),
       "return"|"number_literal"|"if"|"true"|"false"|"for"
-        |"comment"|"else" => (),
+        |"comment"|"else"|"while" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),

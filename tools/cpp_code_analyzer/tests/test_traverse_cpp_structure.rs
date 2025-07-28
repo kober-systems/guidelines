@@ -74,6 +74,10 @@ int global_function(int param1) {
     2+40;
   }
 
+  while (true) {
+    return 43 - 1;
+  }
+
   return 42;
 }
 "#;
