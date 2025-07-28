@@ -300,7 +300,8 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
       }
       ";"|"{"|"}"|"("|")"|":"|"="|"," => (),
       "primitive_type"|"number_literal"|"string_literal"|"type_identifier"
-        |"type_qualifier"|"storage_class_specifier" => (),
+        |"type_qualifier"|"storage_class_specifier"|"attribute_specifier"
+        |"sizeof_expression" => (),
       "initializer_list" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
@@ -474,7 +475,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "declaration" => children.append(&mut extract_declaration(&child, code, "public")),
       "("|")"|"{"|"}"|";"|"<"|">"|"!="|"<="|">="|"+"|"-"|"||"|"|"
-        |"<<"|">>"|"&&"|"&"|"~"|"*"|"=="|"["|"]"|"!"|"/" => (),
+        |"<<"|">>"|"&&"|"&"|"~"|"*"|"=="|"["|"]"|"!"|"/"|"%" => (),
       "return"|"number_literal"|"if"|"true"|"false"|"for"
         |"comment"|"else"|"while"|"string_literal" => (),
       _ => children.push(AST {
