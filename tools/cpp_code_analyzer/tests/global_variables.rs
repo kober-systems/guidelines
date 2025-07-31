@@ -138,7 +138,7 @@ enum myenum {
 };
 
 int function_call_other(int var) {
-  return i + variant1;
+  return i + variant1 + myenum::variant2;
 }
 "#;
     let errors = analyze_cpp(code);

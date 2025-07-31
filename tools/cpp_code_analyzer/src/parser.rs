@@ -401,7 +401,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
     let range = child.byte_range();
     match child.kind() {
       x if is_statement(x)  => children.append(&mut extract_statement(&child, code)),
-      "identifier" => children.push(AST {
+      "identifier"|"qualified_identifier" => children.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::Read),
         range,
@@ -437,7 +437,7 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "identifier" => children.push(AST {
+      "identifier"|"qualified_identifier" => children.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::Write),
         range,
@@ -642,19 +642,23 @@ fn extract_param(node: &Node, code: &str) -> AST {
 
 fn parse_enum(node: &Node, code: &str) -> Vec<AST> {
   let mut children = vec![];
+  let mut name = "";
 
   for idx in 0..node.child_count() {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "type_identifier" => children.push(AST {
-        name: code[range.start..range.end].to_string(),
-        kind: Kind::Type,
-        range: node.byte_range(),
-        ..AST::default()
-      }),
+      "type_identifier" => {
+        name = &code[range.start..range.end];
+        children.push(AST {
+          name: name.to_string(),
+          kind: Kind::Type,
+          range: node.byte_range(),
+          ..AST::default()
+        })
+      },
       "enum"|"class"|";" => (),
-      "enumerator_list" => children.append(&mut parse_enum_variant(&child, code)),
+      "enumerator_list" => children.append(&mut parse_enum_variant(&child, code, name)),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range,
@@ -666,22 +670,35 @@ fn parse_enum(node: &Node, code: &str) -> Vec<AST> {
   children
 }
 
-fn parse_enum_variant(node: &Node, code: &str) -> Vec<AST> {
+fn parse_enum_variant(node: &Node, code: &str, namespace: &str) -> Vec<AST> {
   let mut children = vec![];
 
   for idx in 0..node.child_count() {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "enumerator" => children.push(AST {
-        name: get_variable_name(&child, code) ,
-        kind: Kind::Variable(Variable {
-          is_const: true,
-          visibility: "public".to_string(),
-        }),
-        range: range,
-        ..AST::default()
-      }),
+      "enumerator" => {
+        let variant_name = get_variable_name(&child, code);
+        let qualified_name = format!("{namespace}::{variant_name}");
+        children.push(AST {
+          name: variant_name,
+          kind: Kind::Variable(Variable {
+            is_const: true,
+            visibility: "public".to_string(),
+          }),
+          range: range.clone(),
+          ..AST::default()
+        });
+        children.push(AST {
+          name: qualified_name,
+          kind: Kind::Variable(Variable {
+            is_const: true,
+            visibility: "public".to_string(),
+          }),
+          range: range,
+          ..AST::default()
+        });
+      },
       "{"|"}"|"," => (),
       "comment" => (),
       _ => children.push(AST {
