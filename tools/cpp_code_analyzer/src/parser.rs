@@ -540,13 +540,15 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
   for idx in 0..node.child_count() {
     let child = node.child(idx).unwrap();
     match child.kind() {
-      "identifier"|"pointer_expression" => {
+      "identifier" => {
         children.push(extract_argument(&child, code))
       }
+      "pointer_expression" => children.append(&mut extract_arguments(&child, code) ),
       x if is_statement(x) => children.append(&mut extract_statement(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
-      "("|")"|"," => (),
+      "update_expression" => children.append(&mut extract_update_expression(&child, code)),
+      "("|")"|","|"&"|"*" => (),
       x if is_literal(x) => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
@@ -569,9 +571,6 @@ fn extract_argument(node: &Node, code: &str) -> AST {
     match child.kind() {
       "identifier" => {
         name = &code[range.start..range.end];
-      }
-      "pointer_expression" => {
-        return extract_argument(&child, code);
       }
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
@@ -818,7 +817,7 @@ fn is_statement(kind: &str) -> bool {
       |"for_statement"|"binary_expression"|"else_clause"
       |"unary_expression"|"parenthesized_expression"
       |"subscript_expression"|"subscript_argument_list"
-      |"cast_expression"|"while_statement"
+      |"cast_expression"|"while_statement"|"pointer_expression"
       |"switch_statement"|"case_statement" => true,
     _ => false
   }
