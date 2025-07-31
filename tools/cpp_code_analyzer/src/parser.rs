@@ -621,14 +621,14 @@ fn extract_argument(node: &Node, code: &str) -> AST {
 fn extract_param(node: &Node, code: &str) -> AST {
   let mut dependencies = vec![];
   let mut children = vec![];
-  let mut name = "";
+  let mut name = "".to_string();
 
   for idx in 0..node.child_count() {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
       "identifier"|"pointer_declarator"|"reference_declarator" => {
-        name = &code[range.start..range.end];
+        name = get_variable_name(&child, code);
       }
       "primitive_type"|"type_identifier"|"struct_specifier"
         |"function_declarator" => dependencies.push(AST {
@@ -815,7 +815,8 @@ fn get_variable_name(node: &Node, code: &str) -> String {
       let range = node.byte_range();
       return code[range.start..range.end].to_string()
     },
-    "array_declarator"|"enumerator"|"pointer_declarator" => {
+    "array_declarator"|"enumerator"|"pointer_declarator"
+      |"reference_declarator" => {
       for idx in 0..node.child_count() {
         let child = node.child(idx).unwrap();
         match child.kind() {

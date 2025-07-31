@@ -358,7 +358,7 @@ fn get_constants(ast: &Vec<AST>) -> HashSet<String> {
 
 fn get_vars_in_scope(input: &AST) -> HashSet<String> {
   input.children.iter().filter_map(|node| match node.kind {
-    Kind::Variable(_) => Some(node.name.strip_prefix("*").unwrap_or(&node.name).trim().to_string()),
+    Kind::Variable(_) => Some(node.name.trim().to_string()),
     _ => None,
   }).collect()
 }
@@ -366,7 +366,7 @@ fn get_vars_in_scope(input: &AST) -> HashSet<String> {
 fn get_constants_in_scope(input: &AST) -> HashSet<String> {
   input.children.iter().filter_map(|node| match node.kind {
     Kind::Variable(ref v) => if v.is_const {
-      Some(node.name.strip_prefix("*").unwrap_or(&node.name).trim().to_string())
+      Some(node.name.trim().to_string())
     } else {
       None
     }
