@@ -307,6 +307,7 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
       x if is_literal(x) => (),
       "initializer_list" => (),
       x if is_statement(x) => children.append(&mut extract_statement(&child, code)),
+      x if is_update_expression(x) => children.append(&mut extract_update_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       _ => children.push(AST {
@@ -416,9 +417,9 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "declaration" => children.append(&mut extract_declaration(&child, code, "public")),
-      "("|")"|"{"|"}"|";"|"<"|">"|"!="|"<="|">="|"+"|"-"|"||"|"|"
+      "("|")"|"{"|"}"|";"|"<"|">"|"!="|"<="|">="|"+"|"-"|"||"|"|"|"?"
         |"<<"|">>"|"&&"|"&"|"~"|"*"|"=="|"["|"]"|"!"|"/"|"%"|":" => (),
-      "return"|"if"|"for"|"do"
+      "return"|"if"|"for"|"do"|"continue_statement"
         |"comment"|"else"|"while"|"switch"
         |"case"|"break_statement"|"default" => (),
       "sizeof_expression" => (),
@@ -881,7 +882,7 @@ fn is_statement(kind: &str) -> bool {
       |"unary_expression"|"parenthesized_expression"
       |"subscript_expression"|"subscript_argument_list"
       |"cast_expression"|"while_statement"|"pointer_expression"
-      |"switch_statement"|"case_statement"
+      |"switch_statement"|"case_statement"|"conditional_expression"
       |"do_statement"|"new_declarator" => true,
     _ => false
   }
