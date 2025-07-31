@@ -260,8 +260,12 @@ fn get_lint_errors_for_node(input: &AST, code: &TextFile, vars: &InScope) -> Vec
     }
     Kind::Function(fun) => {
       match &fun.in_external_namespace {
-        None => get_lint_errors_for_function(input, &vars.constants, code),
-        Some(namespace) => get_lint_errors_for_function(input, vars.namespaces.get(namespace).unwrap_or(&HashSet::default()), code),
+        None => get_lint_errors_for_function(input, |name| { vars.constants.contains(name)  }, code),
+        Some(namespace) => get_lint_errors_for_function(input, |name| {
+          let empty = HashSet::default();
+          let class_vars = vars.namespaces.get(namespace).unwrap_or(&empty);
+          class_vars.contains(name) || vars.constants.contains(name)
+        }, code),
       }
     },
     Kind::Type => vec![],
@@ -285,7 +289,10 @@ fn get_lint_errors_for_node(input: &AST, code: &TextFile, vars: &InScope) -> Vec
   }
 }
 
-fn get_lint_errors_for_function(input: &AST, class_vars: &HashSet<String>, code: &TextFile) -> Vec<LintError> {
+fn get_lint_errors_for_function<F>(input: &AST, in_scope: F, code: &TextFile) -> Vec<LintError>
+where
+  F: Fn(&str) -> bool,
+{
   let mut errors = vec![];
   let vars_in_scope = get_vars_in_scope(input);
 
@@ -294,7 +301,7 @@ fn get_lint_errors_for_function(input: &AST, class_vars: &HashSet<String>, code:
       Kind::Reference(ref_kind) => {
         use Reference::*;
         match ref_kind {
-          Read|Write => if !vars_in_scope.contains(&node.name) && !class_vars.contains(&node.name) {
+          Read|Write => if !vars_in_scope.contains(&node.name) && !in_scope(&node.name) {
             errors.push(LintError {
               message: format!("It's not allowed to use global variables ('{}'). Global variables create invisible coupling.", node.name),
               range: node.range.clone(),

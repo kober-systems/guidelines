@@ -140,3 +140,16 @@ int function_call_other(int var) {
     let errors = analyze_cpp(code);
     assert_eq!(errors, Vec::<String>::new());
 }
+
+#[test]
+fn allow_reading_constants_from_methods() {
+    let code = r#"
+constexpr int i = 42;
+
+int MyClass::foo() {
+  return i;
+}
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
