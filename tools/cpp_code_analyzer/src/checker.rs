@@ -132,6 +132,7 @@ fn check_derived_class(node: &AST, class_name: &str, code: &TextFile) -> Vec<Lin
         range: child.range.clone(),
         file_path: code.file_path.clone(),
       }),
+      Kind::Type|Kind::Reference(_)  => (),
       _ => unreachable!(),
     }
   }
@@ -270,7 +271,7 @@ fn get_lint_errors_for_node(input: &AST, code: &TextFile, vars: &InScope) -> Vec
         }, code),
       }
     },
-    Kind::Type => vec![],
+    Kind::Type|Kind::Reference(_)  => vec![],
     Kind::Variable(var) => {
       let mut errors = vec![];
       if !var.is_const {

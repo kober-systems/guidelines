@@ -306,6 +306,9 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
         |"sizeof_expression"|"sized_type_specifier"|"virtual" => (),
       x if is_literal(x) => (),
       "initializer_list" => (),
+      x if is_statement(x) => children.append(&mut extract_statement(&child, code)),
+      "call_expression" => children.append(&mut extract_call_expression(&child, code)),
+      "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("extract_declaration: {}", child.to_sexp())),
         range: child.byte_range(),
@@ -444,6 +447,7 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
       } ),
       x if is_statement(x) => children.append(&mut extract_statement(&child, code)),
       x if is_update_expression(x) => children.append(&mut extract_update_expression(&child, code)),
+      "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       x if is_literal(x) => (),
       "sizeof_expression"|"delete" => (),
