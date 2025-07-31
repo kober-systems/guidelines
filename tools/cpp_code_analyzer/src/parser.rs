@@ -400,13 +400,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "return_statement"|"if_statement"|"condition_clause"
-        |"compound_statement"|"expression_statement"
-        |"for_statement"|"binary_expression"|"else_clause"
-        |"unary_expression"|"parenthesized_expression"
-        |"subscript_expression"|"subscript_argument_list"
-        |"cast_expression"|"while_statement"
-        |"switch_statement"|"case_statement" => children.append(&mut extract_statement(&child, code)),
+      x if is_statement(x)  => children.append(&mut extract_statement(&child, code)),
       "identifier" => children.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::Read),
@@ -448,8 +442,7 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
         range,
         ..AST::default()
       } ),
-      "unary_expression"|"binary_expression"|"subscript_expression"
-        |"cast_expression" => children.append(&mut extract_statement(&child, code)),
+      x if is_statement(x) => children.append(&mut extract_statement(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       x if is_literal(x) => (),
       "sizeof_expression"|"delete" => (),
@@ -550,7 +543,7 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
       "identifier"|"pointer_expression" => {
         children.push(extract_argument(&child, code))
       }
-      "binary_expression"|"subscript_expression" => children.append(&mut extract_statement(&child, code)),
+      x if is_statement(x) => children.append(&mut extract_statement(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "("|")"|"," => (),
@@ -814,6 +807,19 @@ fn is_literal(kind: &str) -> bool {
   match kind {
     "number_literal"|"string_literal"|"true"|"false"
       |"null" => true,
+    _ => false
+  }
+}
+
+fn is_statement(kind: &str) -> bool {
+  match kind {
+    "return_statement"|"if_statement"|"condition_clause"
+      |"compound_statement"|"expression_statement"
+      |"for_statement"|"binary_expression"|"else_clause"
+      |"unary_expression"|"parenthesized_expression"
+      |"subscript_expression"|"subscript_argument_list"
+      |"cast_expression"|"while_statement"
+      |"switch_statement"|"case_statement" => true,
     _ => false
   }
 }
