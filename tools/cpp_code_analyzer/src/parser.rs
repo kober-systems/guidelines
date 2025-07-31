@@ -374,6 +374,7 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
       "type_identifier"|";"|"comment" => (),
       "compound_statement" => children.append(&mut extract_statement(&child, code)),
       "template_type" => (),
+      "type_qualifier"|"storage_class_specifier" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("extract_function: {}", child.to_sexp())),
         range: child.byte_range(),
@@ -453,6 +454,14 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
       "sizeof_expression"|"delete" => (),
       "("|")"|"{"|"}"|";"|"++"|"--"|"="|"+="|"*="|"-="|"^="
         |">>="|"|="|"&=" => (),
+      "new" => (),
+      "argument_list" => children.append(&mut extract_arguments(&child, code)),
+      "primitive_type"|"type_identifier"|"struct_specifier"
+        |"function_declarator" => children.push(AST {
+        name: code[range.start..range.end].to_string(),
+        kind: Kind::Reference(Reference::TypeRead),
+        ..AST::default()
+      }),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("extract_update_expression: {}", child.to_sexp())),
         range: child.byte_range(),
@@ -503,7 +512,9 @@ fn extract_field_expression(node: &Node, code: &str) -> Vec<AST> {
         kind: Kind::Reference(Reference::Read),
         range,
         ..AST::default()
-      } ),
+      }),
+      x if is_statement(x) => children.append(&mut extract_statement(&child, code)),
+      "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "field_identifier" => (),
       "this" => (),
       "("|")"|"{"|"}"|";"|"."|"->" => (),
@@ -870,7 +881,7 @@ fn is_statement(kind: &str) -> bool {
       |"subscript_expression"|"subscript_argument_list"
       |"cast_expression"|"while_statement"|"pointer_expression"
       |"switch_statement"|"case_statement"
-      |"do_statement" => true,
+      |"do_statement"|"new_declarator" => true,
     _ => false
   }
 }
@@ -878,7 +889,7 @@ fn is_statement(kind: &str) -> bool {
 fn is_update_expression(kind: &str) -> bool {
   match kind {
     "update_expression"|"assignment_expression"
-      |"delete_expression" => true,
+      |"delete_expression"|"new_expression" => true,
     _ => false
   }
 }
