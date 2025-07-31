@@ -833,7 +833,7 @@ fn check_is_const(node: &Node, code: &str) -> bool {
 fn is_literal(kind: &str) -> bool {
   match kind {
     "number_literal"|"string_literal"|"true"|"false"
-      |"null" => true,
+      |"null"|"char_literal" => true,
     _ => false
   }
 }
