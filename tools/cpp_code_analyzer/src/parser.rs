@@ -407,8 +407,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
         range,
         ..AST::default()
       } ),
-      "update_expression"|"assignment_expression"
-        |"delete_expression" => children.append(&mut extract_update_expression(&child, code)),
+      x if is_update_expression(x) => children.append(&mut extract_update_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "declaration" => children.append(&mut extract_declaration(&child, code, "public")),
@@ -444,6 +443,7 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
         ..AST::default()
       } ),
       x if is_statement(x) => children.append(&mut extract_statement(&child, code)),
+      x if is_update_expression(x) => children.append(&mut extract_update_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       x if is_literal(x) => (),
       "sizeof_expression"|"delete" => (),
@@ -870,3 +870,10 @@ fn is_statement(kind: &str) -> bool {
   }
 }
 
+fn is_update_expression(kind: &str) -> bool {
+  match kind {
+    "update_expression"|"assignment_expression"
+      |"delete_expression" => true,
+    _ => false
+  }
+}
