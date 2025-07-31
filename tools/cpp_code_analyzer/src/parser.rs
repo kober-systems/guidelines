@@ -501,6 +501,7 @@ fn extract_field_expression(node: &Node, code: &str) -> Vec<AST> {
         ..AST::default()
       } ),
       "field_identifier" => (),
+      "this" => (),
       "("|")"|"{"|"}"|";"|"."|"->" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
