@@ -374,6 +374,7 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
       "type_identifier"|";"|"comment" => (),
       "compound_statement" => children.append(&mut extract_statement(&child, code)),
       "template_type" => (),
+      "pointer_declarator" => (),
       "type_qualifier"|"storage_class_specifier" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("extract_function: {}", child.to_sexp())),
@@ -838,7 +839,7 @@ fn get_function_name(cl: &Node, code: &str) -> (String, Option<String>) {
       "namespace_identifier" => {
         namespace = Some(code[range.start..range.end].to_string());
       },
-      "template_type"|"function_declarator"|"qualified_identifier" => {
+      "template_type"|"function_declarator"|"qualified_identifier"|"pointer_declarator" => {
         return get_function_name(&child, code)
       },
       _ => (),
