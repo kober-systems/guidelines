@@ -417,8 +417,8 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "declaration" => children.append(&mut extract_declaration(&child, code, "public")),
-      "("|")"|"{"|"}"|";"|"<"|">"|"!="|"<="|">="|"+"|"-"|"||"|"|"|"?"
-        |"<<"|">>"|"&&"|"&"|"~"|"*"|"=="|"["|"]"|"!"|"/"|"%"|":" => (),
+      "("|")"|"{"|"}"|";"|"["|"]"|":" => (),
+      x if is_read_operator(x) => (),
       "return"|"if"|"for"|"do"|"continue_statement"
         |"comment"|"else"|"while"|"switch"
         |"case"|"break_statement"|"default" => (),
@@ -884,6 +884,14 @@ fn is_statement(kind: &str) -> bool {
       |"cast_expression"|"while_statement"|"pointer_expression"
       |"switch_statement"|"case_statement"|"conditional_expression"
       |"do_statement"|"new_declarator" => true,
+    _ => false
+  }
+}
+
+fn is_read_operator(kind: &str) -> bool {
+  match kind {
+    "<"|">"|"!="|"<="|">="|"+"|"-"|"||"|"|"|"?"|"not"
+      |"<<"|">>"|"&&"|"&"|"~"|"*"|"=="|"!"|"/"|"%" => true,
     _ => false
   }
 }
