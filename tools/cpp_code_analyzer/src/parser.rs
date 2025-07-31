@@ -335,7 +335,7 @@ fn extract_function_definition(field: &Node, code: &str, access_specifier: &str)
         });
       }
       ";"|"{"|"}"|"("|")"|":"|"=" => (),
-      "primitive_type"|"number_literal"
+      "primitive_type"
         |"type_qualifier" => (),
       _ => errors.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
@@ -414,7 +414,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "declaration" => children.append(&mut extract_declaration(&child, code, "public")),
       "("|")"|"{"|"}"|";"|"<"|">"|"!="|"<="|">="|"+"|"-"|"||"|"|"
         |"<<"|">>"|"&&"|"&"|"~"|"*"|"=="|"["|"]"|"!"|"/"|"%"|":" => (),
-      "return"|"if"|"for"
+      "return"|"if"|"for"|"do"
         |"comment"|"else"|"while"|"switch"
         |"case"|"break_statement"|"default" => (),
       "sizeof_expression" => (),
@@ -864,7 +864,8 @@ fn is_statement(kind: &str) -> bool {
       |"unary_expression"|"parenthesized_expression"
       |"subscript_expression"|"subscript_argument_list"
       |"cast_expression"|"while_statement"|"pointer_expression"
-      |"switch_statement"|"case_statement" => true,
+      |"switch_statement"|"case_statement"
+      |"do_statement" => true,
     _ => false
   }
 }

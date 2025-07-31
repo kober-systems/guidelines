@@ -86,6 +86,10 @@ int global_function(int param1) {
       return 2 * 21;
   }
 
+  do {
+    4 & 2;
+  } while(false != true);
+
   return 42;
 }
 "#;
