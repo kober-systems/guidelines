@@ -301,9 +301,10 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
         children.push(parse_enum(&child, code));
       }
       ";"|"{"|"}"|"("|")"|":"|"="|"," => (),
-      "primitive_type"|"number_literal"|"string_literal"|"type_identifier"
+      "primitive_type"|"type_identifier"
         |"type_qualifier"|"storage_class_specifier"|"attribute_specifier"
-        |"sizeof_expression"|"sized_type_specifier"|"virtual"|"null" => (),
+        |"sizeof_expression"|"sized_type_specifier"|"virtual" => (),
+      x if is_literal(x) => (),
       "initializer_list" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
@@ -419,9 +420,10 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "declaration" => children.append(&mut extract_declaration(&child, code, "public")),
       "("|")"|"{"|"}"|";"|"<"|">"|"!="|"<="|">="|"+"|"-"|"||"|"|"
         |"<<"|">>"|"&&"|"&"|"~"|"*"|"=="|"["|"]"|"!"|"/"|"%"|":" => (),
-      "return"|"number_literal"|"if"|"true"|"false"|"for"
-        |"comment"|"else"|"while"|"string_literal"|"switch"
+      "return"|"if"|"for"
+        |"comment"|"else"|"while"|"switch"
         |"case"|"break_statement"|"default" => (),
+      x if is_literal(x) => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
@@ -449,8 +451,8 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
       "unary_expression"|"binary_expression"|"subscript_expression"
         |"cast_expression" => children.append(&mut extract_statement(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
-      "number_literal"|"string_literal"|"true"|"false"
-        |"sizeof_expression"|"null"|"delete" => (),
+      x if is_literal(x) => (),
+      "sizeof_expression"|"delete" => (),
       "("|")"|"{"|"}"|";"|"++"|"--"|"="|"+="|"*="|"-="|"^="
         |">>="|"|="|"&=" => (),
       _ => children.push(AST {
@@ -552,7 +554,7 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "("|")"|"," => (),
-      "number_literal"|"string_literal" => (),
+      x if is_literal(x) => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
@@ -616,6 +618,9 @@ fn extract_param(node: &Node, code: &str) -> AST {
         kind: Kind::Reference(Reference::TypeRead),
         ..AST::default()
       }),
+      "type_qualifier" => (),
+      "=" => (),
+      x if is_literal(x) => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range: child.byte_range(),
@@ -803,5 +808,13 @@ fn check_is_const(node: &Node, code: &str) -> bool {
     }
   }
   false
+}
+
+fn is_literal(kind: &str) -> bool {
+  match kind {
+    "number_literal"|"string_literal"|"true"|"false"
+      |"null" => true,
+    _ => false
+  }
 }
 
