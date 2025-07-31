@@ -307,7 +307,7 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
       x if is_literal(x) => (),
       "initializer_list" => (),
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("extract_declaration: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -372,7 +372,7 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
       "compound_statement" => children.append(&mut extract_statement(&child, code)),
       "template_type" => (),
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("extract_function: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -419,7 +419,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "sizeof_expression" => (),
       x if is_literal(x) => (),
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("extract_statement: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -450,7 +450,7 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
       "("|")"|"{"|"}"|";"|"++"|"--"|"="|"+="|"*="|"-="|"^="
         |">>="|"|="|"&=" => (),
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("extract_update_expression: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -504,7 +504,7 @@ fn extract_field_expression(node: &Node, code: &str) -> Vec<AST> {
       "this" => (),
       "("|")"|"{"|"}"|";"|"."|"->" => (),
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("extract_field_expression: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -555,7 +555,7 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
       "this" => (),
       x if is_literal(x) => (),
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("extract_arguments {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -577,7 +577,7 @@ fn extract_argument(node: &Node, code: &str) -> AST {
         name = &code[range.start..range.end];
       }
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("extract_argument: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -618,7 +618,7 @@ fn extract_param(node: &Node, code: &str) -> AST {
       "=" => (),
       x if is_literal(x) => (),
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("extract_param: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -662,7 +662,7 @@ fn parse_enum(node: &Node, code: &str) -> Vec<AST> {
       "enum"|"class"|";" => (),
       "enumerator_list" => children.append(&mut parse_enum_variant(&child, code, name)),
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("parse_enum: {}", child.to_sexp())),
         range,
         ..AST::default()
       }),
