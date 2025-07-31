@@ -275,7 +275,12 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
         children.append(&mut extract_declaration(&child, code, access_specifier));
       },
       "pointer_declarator" => {
-        let name = &code[range.start..range.end];
+        let name = if code[range.start..range.end].contains("(") {
+          let (name, _namespace) = get_function_name(&child, code);
+          name
+        } else {
+          get_variable_name(&child, code)
+        };
         children.push(AST {
           name: name.to_string(),
           kind: if name.contains("(") {
@@ -300,7 +305,7 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
       "enum_specifier" => {
         children.append(&mut parse_enum(&child, code));
       }
-      ";"|"{"|"}"|"("|")"|":"|"="|"," => (),
+      ";"|"{"|"}"|"("|")"|":"|"="|","|"*" => (),
       "primitive_type"|"type_identifier"
         |"type_qualifier"|"storage_class_specifier"|"attribute_specifier"
         |"sizeof_expression"|"sized_type_specifier"|"virtual" => (),
@@ -810,11 +815,12 @@ fn get_variable_name(node: &Node, code: &str) -> String {
       let range = node.byte_range();
       return code[range.start..range.end].to_string()
     },
-    "array_declarator"|"enumerator" => {
+    "array_declarator"|"enumerator"|"pointer_declarator" => {
       for idx in 0..node.child_count() {
         let child = node.child(idx).unwrap();
         match child.kind() {
-          "identifier"|"field_identifier"|"array_declarator" => {
+          "identifier"|"field_identifier"
+            |"array_declarator"|"pointer_declarator" => {
             return get_variable_name(&child, code)
           },
           _ => (),

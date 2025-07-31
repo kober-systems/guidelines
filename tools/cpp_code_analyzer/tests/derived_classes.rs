@@ -83,7 +83,7 @@ public:
     let errors = analyze_cpp(code);
     assert_eq!(errors, [
       "Derived class 'MyClass' must not have non private attributes ('my_variable')",
-      "Derived class 'MyClass' must not have non private attributes ('*handle')",
+      "Derived class 'MyClass' must not have non private attributes ('handle')",
     ]);
 }
 
