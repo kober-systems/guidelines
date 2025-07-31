@@ -417,6 +417,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "return"|"if"|"for"
         |"comment"|"else"|"while"|"switch"
         |"case"|"break_statement"|"default" => (),
+      "sizeof_expression" => (),
       x if is_literal(x) => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
@@ -548,6 +549,7 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "update_expression" => children.append(&mut extract_update_expression(&child, code)),
+      "sizeof_expression" => (),
       "("|")"|","|"&"|"*" => (),
       x if is_literal(x) => (),
       _ => children.push(AST {
