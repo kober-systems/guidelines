@@ -552,6 +552,7 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
       "update_expression" => children.append(&mut extract_update_expression(&child, code)),
       "sizeof_expression" => (),
       "("|")"|","|"&"|"*" => (),
+      "this" => (),
       x if is_literal(x) => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
