@@ -72,11 +72,13 @@ fn check_abstract_class(node: &AST, class_name: &str, code: &TextFile) -> Vec<Li
             file_path: code.file_path.clone(),
           });
         }
-        errors.push(LintError {
-          message: format!("Abstract class `{class_name}` must not have attributes ('{}')", child.name),
-          range: child.range.clone(),
-          file_path: code.file_path.clone(),
-        });
+        if !vl.is_const {
+          errors.push(LintError {
+            message: format!("Abstract class `{class_name}` must not have attributes ('{}')", child.name),
+            range: child.range.clone(),
+            file_path: code.file_path.clone(),
+          });
+        }
       }
       Kind::Function(fun) => {
         if fun.is_virtual && child.name == format!("~{class_name}()") {

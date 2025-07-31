@@ -132,9 +132,13 @@ int MyClass::bar() {
 fn allow_reading_constants() {
     let code = r#"
 constexpr int i = 42;
+enum myenum {
+  variant1,
+  variant2,
+};
 
 int function_call_other(int var) {
-  return i;
+  return i + variant1;
 }
 "#;
     let errors = analyze_cpp(code);

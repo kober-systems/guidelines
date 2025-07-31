@@ -36,7 +36,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
         |"preproc_arg"|"namespace"|"#if"|"#elif"|"#else"
         |"preproc_defined"|"template"|"typedef" => (),
       ";"|"{"|"}"|"\n" => (),
-      "enum_specifier" => base.children.push(parse_enum(&child, code)),
+      "enum_specifier" => base.children.append(&mut parse_enum(&child, code)),
       "type_definition" => parse_global_codechunk(base, &child, code),
       "struct_specifier" => base.children.push(parse_struct(&child, code)),
       "alias_declaration" => base.children.push(parse_alias(&child, code)),
@@ -298,7 +298,7 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
         children.push(extract_function_definition(&field, code, access_specifier));
       }
       "enum_specifier" => {
-        children.push(parse_enum(&child, code));
+        children.append(&mut parse_enum(&child, code));
       }
       ";"|"{"|"}"|"("|")"|":"|"="|"," => (),
       "primitive_type"|"type_identifier"
@@ -640,33 +640,58 @@ fn extract_param(node: &Node, code: &str) -> AST {
   }
 }
 
-fn parse_enum(node: &Node, code: &str) -> AST {
+fn parse_enum(node: &Node, code: &str) -> Vec<AST> {
   let mut children = vec![];
-  let mut name = "";
 
   for idx in 0..node.child_count() {
     let child = node.child(idx).unwrap();
+    let range = child.byte_range();
     match child.kind() {
-      "type_identifier" => {
-        let range = child.byte_range();
-        name = &code[range.start..range.end];
-      }
-      "enumerator_list"|"class"|";" => (),
+      "type_identifier" => children.push(AST {
+        name: code[range.start..range.end].to_string(),
+        kind: Kind::Type,
+        range: node.byte_range(),
+        ..AST::default()
+      }),
+      "enum"|"class"|";" => (),
+      "enumerator_list" => children.append(&mut parse_enum_variant(&child, code)),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
-        range: child.byte_range(),
+        range,
         ..AST::default()
       }),
     }
   }
 
-  AST {
-    name: name.to_string(),
-    kind: Kind::Type,
-    children,
-    range: node.byte_range(),
-    ..AST::default()
+  children
+}
+
+fn parse_enum_variant(node: &Node, code: &str) -> Vec<AST> {
+  let mut children = vec![];
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      "enumerator" => children.push(AST {
+        name: get_variable_name(&child, code) ,
+        kind: Kind::Variable(Variable {
+          is_const: true,
+          visibility: "public".to_string(),
+        }),
+        range: range,
+        ..AST::default()
+      }),
+      "{"|"}"|"," => (),
+      _ => children.push(AST {
+        kind: Kind::Unhandled(child.to_sexp()),
+        range,
+        ..AST::default()
+      }),
+    }
   }
+
+  children
 }
 
 fn parse_struct(node: &Node, code: &str) -> AST {
@@ -748,7 +773,7 @@ fn get_variable_name(node: &Node, code: &str) -> String {
       let range = node.byte_range();
       return code[range.start..range.end].to_string()
     },
-    "array_declarator" => {
+    "array_declarator"|"enumerator" => {
       for idx in 0..node.child_count() {
         let child = node.child(idx).unwrap();
         match child.kind() {
