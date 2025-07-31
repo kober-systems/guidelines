@@ -108,6 +108,7 @@ int myClass::method() {
 fn parse_global_enums() {
     let code = r#"
 enum class my_enum {
+  // some enum variant
   variant_0,
   variant_1 = 1000,
 };

@@ -683,6 +683,7 @@ fn parse_enum_variant(node: &Node, code: &str) -> Vec<AST> {
         ..AST::default()
       }),
       "{"|"}"|"," => (),
+      "comment" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(child.to_sexp()),
         range,
