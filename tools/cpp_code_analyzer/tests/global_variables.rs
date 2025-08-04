@@ -108,6 +108,7 @@ class MyClass: public AbstractMyInterface {
 public:
     MyClass(int x, AbstractUsedClass *used);
     void foo() {
+      external_var2 += 1 + my_private_variable;
       handle->method(my_private_variable);
     }
     int bar();
@@ -124,6 +125,7 @@ int MyClass::bar() {
 "#;
     let errors = analyze_cpp(code);
     assert_eq!(errors, [
+      "It's not allowed to use global variables ('external_var2'). Global variables create invisible coupling.",
       "It's not allowed to use global variables ('external_var'). Global variables create invisible coupling.",
     ]);
 }

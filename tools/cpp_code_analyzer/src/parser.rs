@@ -343,6 +343,7 @@ fn extract_function_definition(field: &Node, code: &str, access_specifier: &str)
           in_external_namespace: None,
         });
       }
+      "compound_statement" => errors.append(&mut extract_statement(&child, code)),
       ";"|"{"|"}"|"("|")"|":"|"=" => (),
       "primitive_type"
         |"type_qualifier" => (),

@@ -107,7 +107,7 @@ fn check_abstract_class(node: &AST, class_name: &str, code: &TextFile) -> Vec<Li
   errors
 }
 
-fn check_derived_class(node: &AST, class_name: &str, code: &TextFile) -> Vec<LintError> {
+fn check_derived_class(node: &AST, class_name: &str, code: &TextFile, vars: &InScope) -> Vec<LintError> {
   let mut errors = vec![];
 
   for child in node.children.iter() {
@@ -121,7 +121,14 @@ fn check_derived_class(node: &AST, class_name: &str, code: &TextFile) -> Vec<Lin
           });
         }
       }
-      Kind::Function(fun) => errors.append(&mut check_function_is_not_virtual(&child, &fun, class_name, code)),
+      Kind::Function(fun) => {
+        errors.append(&mut check_function_is_not_virtual(&child, &fun, class_name, code));
+        errors.append(&mut get_lint_errors_for_function(&child, |name| {
+          let empty = HashSet::default();
+          let class_vars = vars.namespaces.get(&node.name).unwrap_or(&empty);
+          class_vars.contains(name) || vars.constants.contains(name)
+        }, code));
+      },
       Kind::LintError(msg) => errors.push(LintError {
         message: msg.clone(),
         range: child.range.clone(),
@@ -249,7 +256,7 @@ fn get_lint_errors_for_node(input: &AST, code: &TextFile, vars: &InScope) -> Vec
       if cl.is_abstract {
         errors.append(&mut check_abstract_class(&input, &name, code));
       } else {
-        errors.append(&mut check_derived_class(&input, &name, code));
+        errors.append(&mut check_derived_class(&input, &name, code, vars));
         if input.dependencies.len() == 0 {
           errors.push(LintError {
             message: format!("Class '{name}' must be derived from abstract interface"),
