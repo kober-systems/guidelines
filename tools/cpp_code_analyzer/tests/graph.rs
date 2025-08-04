@@ -1,4 +1,4 @@
-use cpp_code_analyzer::{parser, visualize};
+use cpp_code_analyzer::{checker, parser, visualize};
 use cpp_code_analyzer::visualize::{Connection, ConnectionType, Entity, GraphData};
 use pretty_assertions::assert_eq;
 use std::collections::BTreeMap;
@@ -8,7 +8,7 @@ fn basic_derives() {
   let code = r#"
 class AbstractInterface {
 public:
-  virtual ~AbstractHandle() = default;
+  virtual ~AbstractInterface() = default;
   virtual void foo() = 0;
 };
 
@@ -17,8 +17,7 @@ class Derived: public AbstractInterface {
   void foo() {}
 };
 "#;
-  let ast = vec![parser::parse_cpp_chunc("sample.cpp", code)];
-  let g = visualize::ast_to_graph(ast, code);
+  let g = parse_to_graph(code);
   assert_eq!(g, GraphData {
     nodes: BTreeMap::from([
       ("AbstractInterface".to_string(), Entity {
@@ -41,4 +40,10 @@ class Derived: public AbstractInterface {
       },
     ],
   });
+}
+
+fn parse_to_graph(code: &str) -> GraphData {
+  let ast = vec![parser::parse_cpp_chunc("sample.cpp", code)];
+  let ast = checker::add_lint_erros(ast);
+  visualize::ast_to_graph(ast, code)
 }
