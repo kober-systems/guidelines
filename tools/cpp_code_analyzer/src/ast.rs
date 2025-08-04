@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct AST {
   pub name: String,
   pub kind: Kind,
@@ -8,7 +8,7 @@ pub struct AST {
   pub instructions: Vec<LintInstruction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Kind {
   File{ content: String },
   Class(Class),
@@ -20,25 +20,25 @@ pub enum Kind {
   LintError(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Class {
   pub is_abstract: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Variable {
   pub is_const: bool,
   pub visibility: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Function {
   pub is_virtual: bool,
   pub visibility: String,
   pub in_external_namespace: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum  Reference {
   TypeRead,
   Read,
@@ -53,7 +53,7 @@ pub struct LintError {
   pub file_path: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct LintInstruction {
   pub ident: String,
   pub reason: String,
