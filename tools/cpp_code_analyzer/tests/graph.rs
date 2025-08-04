@@ -24,12 +24,12 @@ class Derived: public AbstractInterface {
       ("AbstractInterface".to_string(), Entity {
         kind: "A".to_string(),
         name: "AbstractInterface".to_string(),
-        problematic: None,
+        problematic: vec![],
       }),
       ("Derived".to_string(), Entity {
         kind: "C".to_string(),
         name: "Derived".to_string(),
-        problematic: None,
+        problematic: vec![],
       }),
     ]),
     connections: vec![
@@ -37,7 +37,7 @@ class Derived: public AbstractInterface {
         kind: ConnectionType::Inheritance,
         from: "Derived".to_string(),
         to: "AbstractInterface".to_string(),
-        problematic: None,
+        problematic: vec![],
       },
     ],
   });

@@ -23,7 +23,7 @@ pub struct Connection {
   pub kind: ConnectionType, // Dependency, Inheritance, Composition, Usage,
   pub from: String,
   pub to: String,
-  pub problematic: Option<String>,
+  pub problematic: Vec<String>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -37,7 +37,7 @@ pub enum ConnectionType {
 pub struct Entity {
   pub kind: String, // Extern, Interface, Class, Variable, Function, Type (Struct|Enum)
   pub name: String,
-  pub problematic: Option<String>,
+  pub problematic: Vec<String>,
 }
 
 pub fn visualize(ast: Vec<AST>, code: &str) -> String {
@@ -64,7 +64,7 @@ fn visualize_graph_data(g: GraphData, vg: &mut VisualGraph) {
 
     let handle = vg.add_node(Element::create(
       ShapeKind::new_box(&vis_name),
-      get_style(node.problematic.is_some()),
+      get_style(!node.problematic.is_empty()),
       Orientation::LeftToRight,
       sz)
     );
@@ -77,7 +77,7 @@ fn visualize_graph_data(g: GraphData, vg: &mut VisualGraph) {
     let to = *handles.get(&con.to).unwrap();
     vg.add_edge(
       Arrow{
-        look: get_style(con.problematic.is_some()),
+        look: get_style(!con.problematic.is_empty()),
         ..Arrow::default()
       },
       from,
@@ -130,7 +130,7 @@ fn extract_node(input: &AST, code: &str, base: GraphData) -> GraphData {
           kind: ConnectionType::Inheritance,
           from: input.name.clone(),
           to: dep_name,
-          problematic: None,
+          problematic: vec![],
         });
       }
       base
@@ -172,7 +172,7 @@ pub fn remove_visual_noise(graph: GraphData) -> GraphData {
   let GraphData { nodes, connections } = graph;
   let mut nodes_to_be_removed: HashSet<_> = nodes.iter().filter_map(|(name, node)| match node.kind.as_str() {
     "T"|"V"|"F" => {
-      if node.problematic.is_none() {
+      if node.problematic.is_empty() {
         Some(name.to_string())
       } else {
         None
@@ -182,13 +182,12 @@ pub fn remove_visual_noise(graph: GraphData) -> GraphData {
   }).collect();
 
   let connections = connections.into_iter().filter(|con| {
-    match &con.problematic {
-      Some(_) => {
-        nodes_to_be_removed.remove(&con.to);
-        nodes_to_be_removed.remove(&con.from);
-        true
-      }
-      None => !nodes_to_be_removed.contains(&con.to),
+    if con.problematic.len() > 0 {
+      nodes_to_be_removed.remove(&con.to);
+      nodes_to_be_removed.remove(&con.from);
+      true
+    } else {
+      !nodes_to_be_removed.contains(&con.to)
     }
   }).collect();
 
@@ -217,15 +216,15 @@ fn get_text_width(text: &str) -> f64 {
   (text.len() as f64 * 8.) + 20.
 }
 
-fn is_problematic(node: &AST) -> Option<String> {
+fn is_problematic(node: &AST) -> Vec<String> {
   if node.children.iter().filter(|n| match n.kind {
     Kind::LintError(_) => true,
     Kind::Unhandled(_) => true,
     _ => false,
   }).count() > 0 {
-    Some("TODO".to_string())
+    vec!["TODO".to_string()]
   } else {
-    None
+    vec![]
   }
 }
 
@@ -241,22 +240,22 @@ mod tests {
         ("Interface".to_string(), Entity {
           kind: "I".to_string(),
           name: "Interface".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
         ("MyClass".to_string(), Entity {
           kind: "C".to_string(),
           name: "MyClass".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
         ("MyGlobalVar".to_string(), Entity {
           kind: "V".to_string(),
           name: "MyGlobalVar".to_string(),
-          problematic: Some("Global variables create hidden dependencies".to_string()),
+          problematic: vec!["Global variables create hidden dependencies".to_string()],
         }),
         ("MyGlobalConstant".to_string(), Entity {
           kind: "V".to_string(),
           name: "MyGlobalConstant".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
       ]),
       connections: vec![
@@ -264,13 +263,13 @@ mod tests {
           kind: ConnectionType::Inheritance,
           from: "MyClass".to_string(),
           to: "Interface".to_string(),
-          problematic: None,
+          problematic: vec![],
         },
         Connection {
           kind: ConnectionType::Usage,
           from: "MyClass".to_string(),
           to: "MyGlobalVar".to_string(),
-          problematic: Some("Global variables create hidden dependencies".to_string()),
+          problematic: vec!["Global variables create hidden dependencies".to_string()],
         },
       ],
     };
@@ -279,17 +278,17 @@ mod tests {
         ("Interface".to_string(), Entity {
           kind: "I".to_string(),
           name: "Interface".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
         ("MyClass".to_string(), Entity {
           kind: "C".to_string(),
           name: "MyClass".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
         ("MyGlobalVar".to_string(), Entity {
           kind: "V".to_string(),
           name: "MyGlobalVar".to_string(),
-          problematic: Some("Global variables create hidden dependencies".to_string()),
+          problematic: vec!["Global variables create hidden dependencies".to_string()],
         }),
       ]),
       connections: vec![
@@ -297,13 +296,13 @@ mod tests {
           kind: ConnectionType::Inheritance,
           from: "MyClass".to_string(),
           to: "Interface".to_string(),
-          problematic: None,
+          problematic: vec![],
         },
         Connection {
           kind: ConnectionType::Usage,
           from: "MyClass".to_string(),
           to: "MyGlobalVar".to_string(),
-          problematic: Some("Global variables create hidden dependencies".to_string()),
+          problematic: vec!["Global variables create hidden dependencies".to_string()],
         },
       ],
     });
@@ -316,17 +315,17 @@ mod tests {
         ("Interface".to_string(), Entity {
           kind: "I".to_string(),
           name: "Interface".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
         ("MyClass".to_string(), Entity {
           kind: "C".to_string(),
           name: "MyClass".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
         ("MyGlobalConstant".to_string(), Entity {
           kind: "V".to_string(),
           name: "MyGlobalConstant".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
       ]),
       connections: vec![
@@ -334,13 +333,13 @@ mod tests {
           kind: ConnectionType::Inheritance,
           from: "MyClass".to_string(),
           to: "Interface".to_string(),
-          problematic: None,
+          problematic: vec![],
         },
         Connection {
           kind: ConnectionType::Usage,
           from: "MyClass".to_string(),
           to: "MyGlobalConstant".to_string(),
-          problematic: Some("Something is wrong".to_string()),
+          problematic: vec!["Something is wrong".to_string()],
         },
       ],
     };
@@ -349,17 +348,17 @@ mod tests {
         ("Interface".to_string(), Entity {
           kind: "I".to_string(),
           name: "Interface".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
         ("MyClass".to_string(), Entity {
           kind: "C".to_string(),
           name: "MyClass".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
         ("MyGlobalConstant".to_string(), Entity {
           kind: "V".to_string(),
           name: "MyGlobalConstant".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
       ]),
       connections: vec![
@@ -367,13 +366,13 @@ mod tests {
           kind: ConnectionType::Inheritance,
           from: "MyClass".to_string(),
           to: "Interface".to_string(),
-          problematic: None,
+          problematic: vec![],
         },
         Connection {
           kind: ConnectionType::Usage,
           from: "MyClass".to_string(),
           to: "MyGlobalConstant".to_string(),
-          problematic: Some("Something is wrong".to_string()),
+          problematic: vec!["Something is wrong".to_string()],
         },
       ],
     });
@@ -386,22 +385,22 @@ mod tests {
         ("Interface".to_string(), Entity {
           kind: "I".to_string(),
           name: "Interface".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
         ("MyClass".to_string(), Entity {
           kind: "C".to_string(),
           name: "MyClass".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
         ("MyGlobalConstant".to_string(), Entity {
           kind: "V".to_string(),
           name: "MyGlobalConstant".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
         ("MyStruct".to_string(), Entity {
           kind: "T".to_string(),
           name: "MyStruct".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
       ]),
       connections: vec![
@@ -409,19 +408,19 @@ mod tests {
           kind: ConnectionType::Inheritance,
           from: "MyClass".to_string(),
           to: "Interface".to_string(),
-          problematic: None,
+          problematic: vec![],
         },
         Connection {
           kind: ConnectionType::Usage,
           from: "MyClass".to_string(),
           to: "MyGlobalConstant".to_string(),
-          problematic: None,
+          problematic: vec![],
         },
         Connection {
           kind: ConnectionType::Usage,
           from: "MyGlobalConstant".to_string(),
           to: "MyStruct".to_string(),
-          problematic: None,
+          problematic: vec![],
         },
       ],
     };
@@ -430,12 +429,12 @@ mod tests {
         ("Interface".to_string(), Entity {
           kind: "I".to_string(),
           name: "Interface".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
         ("MyClass".to_string(), Entity {
           kind: "C".to_string(),
           name: "MyClass".to_string(),
-          problematic: None,
+          problematic: vec![],
         }),
       ]),
       connections: vec![
@@ -443,7 +442,7 @@ mod tests {
           kind: ConnectionType::Inheritance,
           from: "MyClass".to_string(),
           to: "Interface".to_string(),
-          problematic: None,
+          problematic: vec![],
         },
       ],
     });
