@@ -48,6 +48,52 @@ pub fn add_lint_errors(ast: Vec<AST>) -> Vec<AST> {
   }).collect()
 }
 
+pub fn filter_references_in_scope(ast: Vec<AST>) -> Vec<AST> {
+  let vars = get_scope(&ast);
+
+  ast.into_iter().map(|mut node| {
+    match &node.kind {
+      Kind::File { content: _ } => {
+        node.children = node.children.into_iter().map(|mut node| {
+          match node.kind.clone() {
+            Kind::Function(fun) => {
+              match &fun.in_external_namespace {
+                None => filter_references_in_function(node, |name| { vars.constants.contains(name)  }),
+                Some(namespace) => filter_references_in_function(node, |name| {
+                  let empty = HashSet::default();
+                  let class_vars = vars.namespaces.get(namespace).unwrap_or(&empty);
+                  class_vars.contains(name) || vars.constants.contains(name)
+                }),
+              }
+            },
+            Kind::Class(_) => {
+              node.children = node.children.into_iter().map(|node| {
+                match node.kind.clone() {
+                  Kind::Function(fun) => {
+                    match &fun.in_external_namespace {
+                      None => filter_references_in_function(node, |name| { vars.constants.contains(name)  }),
+                      Some(namespace) => filter_references_in_function(node, |name| {
+                        let empty = HashSet::default();
+                        let class_vars = vars.namespaces.get(namespace).unwrap_or(&empty);
+                        class_vars.contains(name) || vars.constants.contains(name)
+                      }),
+                    }
+                  },
+                  _ => node,
+                }
+              }).collect();
+              node
+            },
+            _ => node,
+          }
+        }).collect();
+      },
+      _ => (),
+    }
+    node
+  }).collect()
+}
+
 fn get_scope(ast: &Vec<AST>) -> InScope {
   let vars = get_variables_from_all_classes(ast);
   let constants = get_constants(ast);
@@ -330,6 +376,35 @@ where
     }
   }
   errors
+}
+
+fn filter_references_in_function<F>(input: AST, in_scope: F) -> AST
+where
+  F: Fn(&str) -> bool,
+{
+  let vars_in_scope = get_vars_in_scope(&input);
+
+  let AST { name, kind, children, dependencies, range, instructions } = input;
+  let children = children.into_iter().filter(|node| {
+    match &node.kind {
+      Kind::Reference(ref_kind) => {
+        use Reference::*;
+        match ref_kind {
+          Read|Write => !vars_in_scope.contains(&node.name) && !in_scope(&node.name),
+          Call|TypeRead|Depend => false,
+        }
+      }
+      _ => false,
+    }
+  }).collect();
+  AST {
+    name,
+    kind,
+    children,
+    dependencies,
+    range,
+    instructions
+  }
 }
 
 fn get_variables_from_all_classes(ast: &Vec<AST>) -> HashMap<String, HashSet<String>> {

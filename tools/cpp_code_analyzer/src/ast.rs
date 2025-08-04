@@ -8,7 +8,7 @@ pub struct AST {
   pub instructions: Vec<LintInstruction>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Kind {
   File{ content: String },
   Class(Class),
@@ -20,25 +20,25 @@ pub enum Kind {
   LintError(String),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Class {
   pub is_abstract: bool,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Variable {
   pub is_const: bool,
   pub visibility: String,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Function {
   pub is_virtual: bool,
   pub visibility: String,
   pub in_external_namespace: Option<String>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum  Reference {
   TypeRead,
   Read,

@@ -1,4 +1,4 @@
-use cpp_code_analyzer::{parser, visualize};
+use cpp_code_analyzer::{checker, parser, visualize};
 use cpp_code_analyzer::visualize::{Connection, ConnectionType, Entity, GraphData};
 use pretty_assertions::assert_eq;
 use std::collections::BTreeMap;
@@ -55,7 +55,10 @@ public:
 
 class Derived: public AbstractInterface {
   Derived() {}
-  void foo() { my_global = 42; }
+  void foo(int param) {
+    int var = param;
+    my_global = 42 + param;
+  }
 };
 "#;
   let g = parse_to_graph(code);
@@ -96,5 +99,6 @@ class Derived: public AbstractInterface {
 
 fn parse_to_graph(code: &str) -> GraphData {
   let ast = vec![parser::parse_cpp_chunc("sample.cpp", code)];
+  let ast = checker::filter_references_in_scope(ast);
   visualize::ast_to_graph(ast, code)
 }

@@ -41,7 +41,8 @@ pub struct Entity {
 }
 
 pub fn visualize(ast: Vec<AST>, code: &str) -> String {
-  let ast = crate::checker::add_lint_erros(ast);
+  let ast = crate::checker::filter_references_in_scope(ast);
+  let ast = crate::checker::add_lint_errors(ast);
 
   let mut vg = VisualGraph::new(Orientation::LeftToRight);
 
