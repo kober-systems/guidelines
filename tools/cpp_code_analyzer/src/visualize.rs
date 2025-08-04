@@ -217,15 +217,10 @@ fn get_text_width(text: &str) -> f64 {
 }
 
 fn is_problematic(node: &AST) -> Vec<String> {
-  if node.children.iter().filter(|n| match n.kind {
-    Kind::LintError(_) => true,
-    Kind::Unhandled(_) => true,
-    _ => false,
-  }).count() > 0 {
-    vec!["TODO".to_string()]
-  } else {
-    vec![]
-  }
+  node.children.iter().filter_map(|n| match &n.kind {
+    Kind::LintError(msg) => Some(msg.clone()),
+    _ => None,
+  }).collect()
 }
 
 #[cfg(test)]
