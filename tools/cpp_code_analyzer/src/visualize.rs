@@ -133,6 +133,9 @@ fn extract_node(input: &AST, code: &str, base: GraphData) -> GraphData {
           problematic: vec![],
         });
       }
+      for child in input.children.iter() {
+        base = extract_references(child, &input.name, code, base);
+      }
       base
     },
     Kind::Type|Kind::Reference(_)|Kind::Variable(_) => {
@@ -163,6 +166,35 @@ fn extract_node(input: &AST, code: &str, base: GraphData) -> GraphData {
     },
     Kind::Unhandled(_element) => base,
     _ => todo!()
+  }
+}
+
+fn extract_references(input: &AST, from: &str, code: &str, base: GraphData) -> GraphData {
+  let mut base = base;
+  match &input.kind {
+    Kind::Reference(_) => {
+      let dep_name = input.name.to_string();
+      if !base.nodes.contains_key(&dep_name) {
+        base = extract_node(input, code, base);
+      }
+      base.connections.push(Connection {
+        kind: ConnectionType::Usage,
+        from: from.to_string(),
+        to: dep_name,
+        problematic: vec![],
+      });
+      base
+    },
+    Kind::Function(_) => {
+      for child in input.children.iter() {
+        base = extract_references(child, from, code, base);
+      }
+      base
+    },
+    Kind::Unhandled(_element) => base,
+    Kind::Variable(_) => base,
+    Kind::LintError(_) => base,
+    _ => todo!("{:?}", input.kind)
   }
 }
 
