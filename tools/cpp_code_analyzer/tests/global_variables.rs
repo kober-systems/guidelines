@@ -53,6 +53,19 @@ int function_using_param(int var, float *var2) {
   var2 = 42.;
   return var;
 }
+
+class MyClass: public AbstractMyInterface {
+public:
+    MyClass();
+    int foo(int foo_var) {
+      return foo_var + 1;
+    }
+    int bar(int bar_var);
+};
+
+int MyClass::bar(int bar_var) {
+  return bar_var + 1;
+}
 "#;
     let errors = analyze_cpp(code);
     assert_eq!(errors, Vec::<String>::new());

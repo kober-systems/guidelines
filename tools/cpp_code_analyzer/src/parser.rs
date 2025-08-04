@@ -327,7 +327,7 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
 }
 
 fn extract_function_definition(field: &Node, code: &str, access_specifier: &str) -> AST {
-  let mut errors = vec![];
+  let mut children = vec![];
 
   let mut name = "".to_string();
   let mut kind = Kind::Unhandled(format!("extract_function_definition: {}", field.to_sexp()));
@@ -342,12 +342,13 @@ fn extract_function_definition(field: &Node, code: &str, access_specifier: &str)
           is_virtual: check_pure_virtual(&field, code),
           in_external_namespace: None,
         });
+        children.append(&mut extract_parameters(&child, code));
       }
-      "compound_statement" => errors.append(&mut extract_statement(&child, code)),
+      "compound_statement" => children.append(&mut extract_statement(&child, code)),
       ";"|"{"|"}"|"("|")"|":"|"=" => (),
       "primitive_type"
         |"type_qualifier" => (),
-      _ => errors.push(AST {
+      _ => children.push(AST {
         kind: Kind::Unhandled(format!("extract_function_definition: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
@@ -358,7 +359,7 @@ fn extract_function_definition(field: &Node, code: &str, access_specifier: &str)
   AST {
     name,
     kind,
-    children: errors,
+    children,
     range: field.byte_range(),
     ..AST::default()
   }
