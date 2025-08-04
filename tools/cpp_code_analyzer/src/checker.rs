@@ -3,12 +3,7 @@ use std::collections::{HashMap, HashSet};
 use crate::ast::{AST, Kind, Function, LintError, Reference};
 
 pub fn check_global_codechunk(ast: &Vec<AST>) -> Vec<LintError> {
-  let vars = get_variables_from_all_classes(ast);
-  let constants = get_constants(&ast);
-  let vars = InScope {
-    constants,
-    namespaces: vars,
-  };
+  let vars = get_scope(ast);
   let source = TextFile {
     content: "".to_string(),
     file_path: "".to_string(),
@@ -25,13 +20,8 @@ fn error_message_from_global_codechunk(ast: &Vec<AST>, code: &TextFile, vars: &I
   errors
 }
 
-pub fn add_lint_erros(ast: Vec<AST>) -> Vec<AST> {
-  let vars = get_variables_from_all_classes(&ast);
-  let constants = get_constants(&ast);
-  let vars = InScope {
-    constants,
-    namespaces: vars,
-  };
+pub fn add_lint_errors(ast: Vec<AST>) -> Vec<AST> {
+  let vars = get_scope(&ast);
 
   ast.into_iter().map(|mut node| {
     match &node.kind {
@@ -56,6 +46,15 @@ pub fn add_lint_erros(ast: Vec<AST>) -> Vec<AST> {
     }
     node
   }).collect()
+}
+
+fn get_scope(ast: &Vec<AST>) -> InScope {
+  let vars = get_variables_from_all_classes(ast);
+  let constants = get_constants(ast);
+  InScope {
+    constants,
+    namespaces: vars,
+  }
 }
 
 fn check_abstract_class(node: &AST, class_name: &str, code: &TextFile) -> Vec<LintError> {
