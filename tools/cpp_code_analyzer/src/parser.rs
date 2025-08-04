@@ -126,7 +126,7 @@ fn extract_class(cl: &Node, code: &str) -> AST {
       "type_identifier"|"class"|";" => (),
       "template_type" => (),
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("extract_class: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -162,7 +162,7 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
       "type_identifier"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
       "alias_declaration" => children.push(parse_alias(&child, code)),
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("extract_class_fields: {}", child.to_sexp())),
         range,
         ..AST::default()
       }),
@@ -201,7 +201,7 @@ fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<AST>, Ve
       }
       "class"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
       _ => errors.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("extract_derives: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -347,7 +347,7 @@ fn extract_function_definition(field: &Node, code: &str, access_specifier: &str)
       "primitive_type"
         |"type_qualifier" => (),
       _ => errors.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("extract_function_definition: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -548,7 +548,7 @@ fn extract_parameters(node: &Node, code: &str) -> Vec<AST> {
       "qualified_identifier" => (),
       "parameter_list" => children.append(&mut extract_parameters(&child, code)),
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("extract_parameters: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
