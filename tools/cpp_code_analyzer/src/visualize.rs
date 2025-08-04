@@ -13,31 +13,31 @@ use layout::topo::layout::VisualGraph;
 //use layout::topo::placer::Placer;
 
 #[derive(Debug, PartialEq)]
-struct GraphData {
-  nodes: BTreeMap<String, Entity>,
-  connections: Vec<Connection>,
+pub struct GraphData {
+  pub nodes: BTreeMap<String, Entity>,
+  pub connections: Vec<Connection>,
 }
 
 #[derive(Debug, PartialEq)]
-struct Connection {
-  kind: ConnectionType, // Dependency, Inheritance, Composition, Usage,
-  from: String,
-  to: String,
-  problematic: Option<String>,
+pub struct Connection {
+  pub kind: ConnectionType, // Dependency, Inheritance, Composition, Usage,
+  pub from: String,
+  pub to: String,
+  pub problematic: Option<String>,
 }
 
 #[derive(Debug, PartialEq)]
-enum ConnectionType {
+pub enum ConnectionType {
   Usage,
   Inheritance,
   Composition,
 }
 
 #[derive(Debug, PartialEq)]
-struct Entity {
-  kind: String, // Extern, Interface, Class, Variable, Function, Type (Struct|Enum)
-  name: String,
-  problematic: Option<String>,
+pub struct Entity {
+  pub kind: String, // Extern, Interface, Class, Variable, Function, Type (Struct|Enum)
+  pub name: String,
+  pub problematic: Option<String>,
 }
 
 pub fn visualize(ast: Vec<AST>, code: &str) -> String {
@@ -45,10 +45,7 @@ pub fn visualize(ast: Vec<AST>, code: &str) -> String {
 
   let mut vg = VisualGraph::new(Orientation::LeftToRight);
 
-  let mut g = GraphData { nodes: BTreeMap::default(), connections: vec![] };
-  for node in ast.iter() {
-    g = extract_node(node, code, g)
-  }
+  let g = ast_to_graph(ast, code);
   let g = remove_visual_noise(g);
   visualize_graph_data(g, &mut vg);
 
@@ -86,6 +83,14 @@ fn visualize_graph_data(g: GraphData, vg: &mut VisualGraph) {
       from,
       to);
   }
+}
+
+pub fn ast_to_graph(ast: Vec<AST>, code: &str) -> GraphData {
+  let mut g = GraphData { nodes: BTreeMap::default(), connections: vec![] };
+  for node in ast.iter() {
+    g = extract_node(node, code, g)
+  }
+  g
 }
 
 fn get_style(problematic: bool) -> StyleAttr {
@@ -163,7 +168,7 @@ fn extract_node(input: &AST, code: &str, base: GraphData) -> GraphData {
 
 /// Some nodes make the output only less readable. Keep them only when
 /// they create problems in the code and need attention
-fn remove_visual_noise(graph: GraphData) -> GraphData {
+pub fn remove_visual_noise(graph: GraphData) -> GraphData {
   let GraphData { nodes, connections } = graph;
   let mut nodes_to_be_removed: HashSet<_> = nodes.iter().filter_map(|(name, node)| match node.kind.as_str() {
     "T"|"V"|"F" => {
