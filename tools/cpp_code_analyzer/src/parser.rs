@@ -43,7 +43,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
       "type_identifier" => (),
       "function_definition" => base.children.push(extract_function(&child, code, "public")),
       _ => base.children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("parse_global_codechunk: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -64,7 +64,7 @@ fn parse_include(node: &Node, code: &str) -> AST {
       }
       "type_identifier"|"class"|";" => (),
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("parse_include: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -473,7 +473,7 @@ fn extract_call_expression(node: &Node, code: &str) -> Vec<AST> {
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "("|")"|"{"|"}"|";" => (),
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("extract_call_expression: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -703,7 +703,7 @@ fn parse_enum_variant(node: &Node, code: &str, namespace: &str) -> Vec<AST> {
       "{"|"}"|"," => (),
       "comment" => (),
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("parse_enum_variant: {}", child.to_sexp())),
         range,
         ..AST::default()
       }),
@@ -725,7 +725,7 @@ fn parse_struct(node: &Node, code: &str) -> AST {
         name = &code[range.start..range.end];
       }
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("parse_struct: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
@@ -753,7 +753,7 @@ fn parse_alias(node: &Node, code: &str) -> AST {
         name = &code[range.start..range.end];
       }
       _ => children.push(AST {
-        kind: Kind::Unhandled(child.to_sexp()),
+        kind: Kind::Unhandled(format!("parse_alias: {}", child.to_sexp())),
         range: child.byte_range(),
         ..AST::default()
       }),
