@@ -109,6 +109,20 @@ int myClass::method() {
 }
 
 #[test]
+fn parse_inline_method_definitions() {
+    let code = r#"
+class MyClass: public AbstractMyInterface {
+public:
+  int my_method() {
+    return 42;
+  }
+}
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+
+#[test]
 fn parse_global_enums() {
     let code = r#"
 enum class my_enum {
