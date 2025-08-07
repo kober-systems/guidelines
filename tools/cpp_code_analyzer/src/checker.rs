@@ -67,17 +67,15 @@ pub fn filter_references_in_scope(ast: Vec<AST>) -> Vec<AST> {
               }
             },
             Kind::Class(_) => {
+              let class_name = &node.name;
               node.children = node.children.into_iter().map(|node| {
                 match node.kind.clone() {
-                  Kind::Function(fun) => {
-                    match &fun.in_external_namespace {
-                      None => filter_references_in_function(node, |name| { vars.constants.contains(name)  }),
-                      Some(namespace) => filter_references_in_function(node, |name| {
-                        let empty = HashSet::default();
-                        let class_vars = vars.namespaces.get(namespace).unwrap_or(&empty);
-                        class_vars.contains(name) || vars.constants.contains(name)
-                      }),
-                    }
+                  Kind::Function(_) => {
+                    filter_references_in_function(node, |name| {
+                      let empty = HashSet::default();
+                      let class_vars = vars.namespaces.get(class_name).unwrap_or(&empty);
+                      class_vars.contains(name) || vars.constants.contains(name)
+                    })
                   },
                   _ => node,
                 }
