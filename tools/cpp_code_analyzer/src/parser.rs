@@ -724,6 +724,8 @@ fn parse_struct(node: &Node, code: &str) -> AST {
         let range = child.byte_range();
         name = &code[range.start..range.end];
       }
+      "typedef"|"struct"|"field_declaration_list"
+        |"struct_specifier"|";" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("parse_struct: {}", child.to_sexp())),
         range: child.byte_range(),
@@ -752,6 +754,7 @@ fn parse_alias(node: &Node, code: &str) -> AST {
         let range = child.byte_range();
         name = &code[range.start..range.end];
       }
+      "using"|"="|"type_descriptor"|";" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("parse_alias: {}", child.to_sexp())),
         range: child.byte_range(),
