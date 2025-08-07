@@ -345,6 +345,9 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
       "compound_statement" => children.append(&mut extract_statement(&child, code)),
       "template_type" => (),
       "pointer_declarator" => (),
+      x if is_literal(x) => (),
+      "=" => (),
+      "initializer_list" => (),
       "type_qualifier"|"storage_class_specifier" => (),
       "virtual"|"default_method_clause" => (),
       _ => children.push(AST {
