@@ -307,9 +307,17 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
         children.append(&mut parse_enum(&child, code));
       }
       ";"|"{"|"}"|"("|")"|":"|"="|","|"*" => (),
-      "primitive_type"|"type_identifier"
+      "primitive_type"
         |"type_qualifier"|"storage_class_specifier"|"attribute_specifier"
         |"sizeof_expression"|"sized_type_specifier"|"virtual" => (),
+      "type_identifier" => {
+        children.push(AST {
+          name: code[range.start..range.end].to_string(),
+          kind: Kind::Reference(Reference::TypeRead),
+          range,
+          ..AST::default()
+        });
+      }
       x if is_literal(x) => (),
       "initializer_list" => (),
       x if is_statement(x) => children.append(&mut extract_statement(&child, code)),

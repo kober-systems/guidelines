@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashSet};
 
-use crate::ast::{AST, Kind};
+use crate::ast::{Kind, Reference, AST};
 
 use layout::adt::dag::NodeHandle;
 use layout::backends::svg::SVGWriter;
@@ -170,13 +170,17 @@ fn extract_node(input: &AST, code: &str, base: GraphData) -> GraphData {
 fn extract_references(input: &AST, from: &str, code: &str, base: GraphData) -> GraphData {
   let mut base = base;
   match &input.kind {
-    Kind::Reference(_) => {
+    Kind::Reference(r) => {
       let dep_name = input.name.to_string();
       if !base.nodes.contains_key(&dep_name) {
         base = extract_node(input, code, base);
       }
       base.connections.push(Connection {
-        kind: ConnectionType::Usage,
+        kind: match r {
+          Reference::Read|Reference::Write|Reference::Call => ConnectionType::Usage,
+          Reference::TypeRead => ConnectionType::Composition,
+          r => todo!("{:?}", r),
+        },
         from: from.to_string(),
         to: dep_name,
         problematic: vec![],
