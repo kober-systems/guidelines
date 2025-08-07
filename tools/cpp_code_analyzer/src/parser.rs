@@ -427,8 +427,8 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       x if is_literal(x) => (),
       "sizeof_expression"|"delete" => (),
-      "("|")"|"{"|"}"|";"|"++"|"--"|"="|"+="|"*="|"-="|"^="
-        |">>="|"|="|"&=" => (),
+      "("|")"|"{"|"}"|";" => (),
+      x if is_modify_operator(x) => (),
       "new" => (),
       "argument_list" => children.append(&mut extract_arguments(&child, code)),
       "primitive_type"|"type_identifier"|"struct_specifier"
@@ -870,6 +870,14 @@ fn is_read_operator(kind: &str) -> bool {
   match kind {
     "<"|">"|"!="|"<="|">="|"+"|"-"|"||"|"|"|"?"|"not"
       |"<<"|">>"|"&&"|"&"|"~"|"*"|"=="|"!"|"/"|"%" => true,
+    _ => false
+  }
+}
+
+fn is_modify_operator(kind: &str) -> bool {
+  match kind {
+    "++"|"--"|"="|"+="|"*="|"-="|"^="|"/="|"%="
+      |">>="|"|="|"&=" => true,
     _ => false
   }
 }
