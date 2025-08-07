@@ -157,7 +157,7 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
         access_specifier = &code[range.start..range.end];
       }
       "declaration"|"field_declaration" => children.append(&mut extract_declaration(&child, code, access_specifier)),
-      "function_definition" => children.push(extract_function_definition(&child, code, access_specifier)),
+      "function_definition" => children.push(extract_function(&child, code, access_specifier)),
       "type_definition" => children.push(parse_struct(&child, code)),
       "type_identifier"|"comment"|";"|"{"|"}"|"("|")"|":" => (),
       "alias_declaration" => children.push(parse_alias(&child, code)),
@@ -275,7 +275,8 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
         children.append(&mut extract_declaration(&child, code, access_specifier));
       },
       "pointer_declarator" => {
-        let name = if code[range.start..range.end].contains("(") {
+        let is_function = code[range.start..range.end].contains("(");
+        let name = if is_function {
           let (name, _namespace) = get_function_name(&child, code);
           name
         } else {
@@ -283,7 +284,7 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
         };
         children.push(AST {
           name: name.to_string(),
-          kind: if name.contains("(") {
+          kind: if is_function {
             Kind::Function(Function {
               visibility: access_specifier.to_string(),
               is_virtual: check_pure_virtual(&field, code),
@@ -300,7 +301,7 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
         });
       }
       "function_declarator" => {
-        children.push(extract_function_definition(&field, code, access_specifier));
+        children.push(extract_function(&field, code, access_specifier));
       }
       "enum_specifier" => {
         children.append(&mut parse_enum(&child, code));
@@ -326,45 +327,6 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
   children
 }
 
-fn extract_function_definition(field: &Node, code: &str, access_specifier: &str) -> AST {
-  let mut children = vec![];
-
-  let mut name = "".to_string();
-  let mut kind = Kind::Unhandled(format!("extract_function_definition: {}", field.to_sexp()));
-  for idx in 0..field.child_count() {
-    let child = field.child(idx).unwrap();
-    let range = child.byte_range();
-    match child.kind() {
-      "function_declarator" => {
-        name = code[range.start..range.end].to_string();
-        kind = Kind::Function(Function {
-          visibility: access_specifier.to_string(),
-          is_virtual: check_pure_virtual(&field, code),
-          in_external_namespace: None,
-        });
-        children.append(&mut extract_parameters(&child, code));
-      }
-      "compound_statement" => children.append(&mut extract_statement(&child, code)),
-      ";"|"{"|"}"|"("|")"|":"|"=" => (),
-      "primitive_type"
-        |"type_qualifier" => (),
-      _ => children.push(AST {
-        kind: Kind::Unhandled(format!("extract_function_definition: {}", child.to_sexp())),
-        range: child.byte_range(),
-        ..AST::default()
-      }),
-    }
-  }
-
-  AST {
-    name,
-    kind,
-    children,
-    range: field.byte_range(),
-    ..AST::default()
-  }
-}
-
 fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
   let (name, namespace) = get_function_name(field, code);
   let mut dependencies = vec![];
@@ -384,6 +346,7 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
       "template_type" => (),
       "pointer_declarator" => (),
       "type_qualifier"|"storage_class_specifier" => (),
+      "virtual"|"default_method_clause" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("extract_function: {}", child.to_sexp())),
         range: child.byte_range(),
@@ -395,7 +358,7 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
   AST {
     name,
     kind: Kind::Function(Function {
-      is_virtual: false,
+      is_virtual: check_pure_virtual(&field, code),
       visibility: access_specifier.to_string(),
       in_external_namespace: namespace,
     }),
@@ -546,8 +509,9 @@ fn extract_parameters(node: &Node, code: &str) -> Vec<AST> {
     match child.kind() {
       "parameter_declaration"|"optional_parameter_declaration" => children.push(extract_param(&child, code)),
       "("|")"|"," => (),
-      "identifier" => (),
+      "field_identifier"|"identifier"|"destructor_name" => (),
       "qualified_identifier" => (),
+      "operator_name"|"primitive_type" => (),
       "parameter_list" => children.append(&mut extract_parameters(&child, code)),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("extract_parameters: {}", child.to_sexp())),
@@ -836,20 +800,22 @@ fn get_variable_name(node: &Node, code: &str) -> String {
   panic!("each variable must have a name!")
 }
 
-fn get_function_name(cl: &Node, code: &str) -> (String, Option<String>) {
+fn get_function_name(node: &Node, code: &str) -> (String, Option<String>) {
   let mut namespace = None;
 
-  for idx in 0..cl.child_count() {
-    let child = cl.child(idx).unwrap();
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "identifier" => {
+      "identifier"|"field_identifier"|"destructor_name"
+        |"operator_name" => {
         return (code[range.start..range.end].to_string(), namespace);
       },
       "namespace_identifier" => {
         namespace = Some(code[range.start..range.end].to_string());
       },
-      "template_type"|"function_declarator"|"qualified_identifier"|"pointer_declarator" => {
+      "template_type"|"function_declarator"|"qualified_identifier"
+        |"pointer_declarator" => {
         return get_function_name(&child, code)
       },
       _ => (),

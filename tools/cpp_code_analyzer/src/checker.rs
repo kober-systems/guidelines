@@ -126,7 +126,7 @@ fn check_abstract_class(node: &AST, class_name: &str, code: &TextFile) -> Vec<Li
         }
       }
       Kind::Function(fun) => {
-        if fun.is_virtual && child.name == format!("~{class_name}()") {
+        if fun.is_virtual && child.name == format!("~{class_name}") {
           has_default_destructor = true;
         }
         errors.append(&mut check_function_is_virtual(&child, &fun, class_name, code));
