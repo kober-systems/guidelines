@@ -393,30 +393,34 @@ where
   let mut errors = vec![];
   let vars_in_scope = get_vars_in_scope(&input);
 
-  for node in input.children.iter() {
+  input.children = input.children.into_iter().map(|mut node| {
     match &node.kind {
       Kind::Reference(ref_kind) => {
         use Reference::*;
         match ref_kind {
           Read|Write => if !vars_in_scope.contains(&node.name) && !in_scope(&node.name) {
-            errors.push(LintError {
-              message: format!("It's not allowed to use global variables ('{}'). Global variables create invisible coupling.", node.name),
+            node.children.push(AST {
+              kind: Kind::LintError(format!("It's not allowed to use global variables ('{}'). Global variables create invisible coupling.", node.name)),
               range: node.range.clone(),
-              file_path: code.file_path.clone(),
+              ..AST::default()
             });
           }
           Call|TypeRead|Depend => (),
         }
+        node
       }
-      Kind::Variable(_var) => (),
-      Kind::Unhandled(element) => errors.push(LintError {
-        message: element.clone(),
-        range: node.range.clone(),
-        file_path: code.file_path.clone(),
-      }),
+      Kind::Variable(_var) => node,
+      Kind::Unhandled(element) => {
+        errors.push(LintError {
+          message: element.clone(),
+          range: node.range.clone(),
+          file_path: code.file_path.clone(),
+        });
+        node
+      },
       _ => todo!("node {:?} not yet implemented", node.kind)
     }
-  }
+  }).collect();
 
   for err in errors.into_iter() {
     input.children.push(AST {
