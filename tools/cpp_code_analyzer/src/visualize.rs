@@ -183,7 +183,7 @@ fn extract_references(input: &AST, from: &str, code: &str, base: GraphData) -> G
         },
         from: from.to_string(),
         to: dep_name,
-        problematic: vec![],
+        problematic: is_problematic(input),
       });
       base
     },
@@ -205,7 +205,7 @@ fn extract_references(input: &AST, from: &str, code: &str, base: GraphData) -> G
 pub fn remove_visual_noise(graph: GraphData) -> GraphData {
   let GraphData { nodes, connections } = graph;
   let mut nodes_to_be_removed: HashSet<_> = nodes.iter().filter_map(|(name, node)| match node.kind.as_str() {
-    "T"|"V"|"F" => {
+    "T"|"V"|"F"|"Ref" => {
       if node.problematic.is_empty() {
         Some(name.to_string())
       } else {
@@ -431,6 +431,11 @@ mod tests {
           name: "MyStruct".to_string(),
           problematic: vec![],
         }),
+        ("MyExtStruct".to_string(), Entity {
+          kind: "Ref".to_string(),
+          name: "MyExtStruct".to_string(),
+          problematic: vec![],
+        }),
       ]),
       connections: vec![
         Connection {
@@ -443,6 +448,12 @@ mod tests {
           kind: ConnectionType::Usage,
           from: "MyClass".to_string(),
           to: "MyGlobalConstant".to_string(),
+          problematic: vec![],
+        },
+        Connection {
+          kind: ConnectionType::Usage,
+          from: "MyClass".to_string(),
+          to: "MyExtStruct".to_string(),
           problematic: vec![],
         },
         Connection {
