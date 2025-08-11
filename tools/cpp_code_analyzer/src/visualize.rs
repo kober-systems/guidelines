@@ -158,6 +158,11 @@ fn extract_node(input: &AST, code: &str, base: GraphData) -> GraphData {
           base = extract_references(input, class_name, code, base);
         }
         None => {
+          base.nodes.insert(input.name.clone(), Entity {
+            kind: "F".to_string(),
+            name: input.name.clone(),
+            problematic: is_problematic(input)} );
+          base = extract_references(input, &input.name, code, base);
         }
       }
       base
