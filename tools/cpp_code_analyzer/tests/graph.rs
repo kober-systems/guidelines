@@ -110,7 +110,7 @@ public:
 
 class Derived: public AbstractInterface {
   Derived() {}
-  void Derived:foo(int param);
+  void foo(int param);
 };
 
 void Derived::foo(int param) {
@@ -118,7 +118,7 @@ void Derived::foo(int param) {
   my_global = 42 + param;
 }
 "#;
-  let g = parse_to_graph(code);
+  let g = parse_to_graph_with_errors(code);
   assert_eq!(g, GraphData {
     nodes: BTreeMap::from([
       ("AbstractInterface".to_string(), Entity {
@@ -134,7 +134,7 @@ void Derived::foo(int param) {
       ("my_global".to_string(), Entity {
         kind: "V".to_string(),
         name: "my_global".to_string(),
-        problematic: vec![],
+        problematic: vec!["It's not allowed to create global variables ('my_global'). Global variables create invisible coupling.".to_string()],
       }),
     ]),
     connections: vec![
@@ -148,7 +148,7 @@ void Derived::foo(int param) {
         kind: ConnectionType::Usage,
         from: "Derived".to_string(),
         to: "my_global".to_string(),
-        problematic: vec![],
+        problematic: vec!["It's not allowed to use global variables ('my_global'). Global variables create invisible coupling.".to_string()],
       },
     ],
   });
@@ -165,7 +165,7 @@ public:
 
 class Derived: public AbstractInterface {
   Derived() {}
-  void Derived:foo(int param);
+  void foo(int param);
 
 private:
   AbstractHandler *handler = nullptr;
@@ -210,6 +210,13 @@ private:
 
 fn parse_to_graph(code: &str) -> GraphData {
   let ast = vec![parser::parse_cpp_chunc("sample.cpp", code)];
+  let ast = checker::filter_references_in_scope(ast);
+  visualize::ast_to_graph(ast, code)
+}
+
+fn parse_to_graph_with_errors(code: &str) -> GraphData {
+  let ast = vec![parser::parse_cpp_chunc("sample.cpp", code)];
+  let ast = checker::add_lint_errors(ast);
   let ast = checker::filter_references_in_scope(ast);
   visualize::ast_to_graph(ast, code)
 }
