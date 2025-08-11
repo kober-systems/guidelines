@@ -51,7 +51,7 @@ pub fn visualize(ast: Vec<AST>, code: &str) -> String {
   visualize_graph_data(g, &mut vg);
 
   let mut svg = SVGWriter::new();
-  vg.do_it(false, false, false, &mut svg);
+  vg.do_it(false, false, true, &mut svg);
 
   svg.finalize()
 }
