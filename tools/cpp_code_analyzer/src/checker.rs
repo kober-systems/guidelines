@@ -161,10 +161,11 @@ fn check_abstract_class(node: &AST, class_name: &str, code: &TextFile) -> Vec<Li
   errors
 }
 
-fn check_derived_class(node: &AST, class_name: &str, code: &TextFile, vars: &InScope) -> Vec<LintError> {
+fn check_derived_class(node: AST, class_name: &str, code: &TextFile, vars: &InScope) -> AST {
+  let mut node = node;
   let mut errors = vec![];
 
-  for child in node.children.iter() {
+  node.children = node.children.into_iter().map(|child| {
     match &child.kind {
       Kind::Variable(vl) => {
         if vl.visibility != "private" && node.instructions.iter().find(|inst| inst.ident == "E_MOD_01").iter().count() == 0 {
@@ -174,27 +175,38 @@ fn check_derived_class(node: &AST, class_name: &str, code: &TextFile, vars: &InS
             file_path: code.file_path.clone(),
           });
         }
+        child
       }
       Kind::Function(fun) => {
         errors.append(&mut check_function_is_not_virtual(&child, &fun, class_name, code));
-        errors.append(&mut get_lint_errors_for_function(&child, |name| {
+        add_lint_errors_for_function(child, |name| {
           let empty = HashSet::default();
           let class_vars = vars.namespaces.get(&node.name).unwrap_or(&empty);
           class_vars.contains(name) || vars.constants.contains(name)
-        }, code));
+        }, code)
       },
-      Kind::LintError(_) => (),
-      Kind::Unhandled(element) => errors.push(LintError {
-        message: element.clone(),
-        range: child.range.clone(),
-        file_path: code.file_path.clone(),
-      }),
-      Kind::Type|Kind::Reference(_)  => (),
+      Kind::LintError(_) => child,
+      Kind::Unhandled(element) => {
+        errors.push(LintError {
+          message: element.clone(),
+          range: child.range.clone(),
+          file_path: code.file_path.clone(),
+        });
+        child
+      },
+      Kind::Type|Kind::Reference(_)  => child,
       _ => unreachable!(),
     }
-  }
+  }).collect();
 
-  errors
+  for err in errors.into_iter() {
+    node.children.push(AST {
+      kind: Kind::LintError(err.message),
+      range: err.range,
+      ..AST::default()
+    });
+  }
+  node
 }
 
 fn check_derives(class: &AST, code: &TextFile) -> Vec<LintError> {
@@ -318,13 +330,13 @@ fn get_lint_errors_for_node(input: &AST, code: &TextFile, vars: &InScope) -> Vec
 fn add_lint_errors_for_node(node: AST, code: &TextFile, vars: &InScope) -> AST {
   let mut node = node;
   let mut errors = vec![];
-  let name = &node.name;
-  match &node.kind {
+  let name = &node.name.clone();
+  match &node.kind.clone() {
     Kind::Class(ref cl) => {
       if cl.is_abstract {
         errors.append(&mut check_abstract_class(&node, &name, code));
       } else {
-        errors.append(&mut check_derived_class(&node, &name, code, vars));
+        node = check_derived_class(node, &name, code, vars);
         if node.dependencies.len() == 0 {
           errors.push(LintError {
             message: format!("Class '{name}' must be derived from abstract interface"),
@@ -336,14 +348,14 @@ fn add_lint_errors_for_node(node: AST, code: &TextFile, vars: &InScope) -> AST {
       errors.append(&mut check_derives(&node, code));
     }
     Kind::Function(fun) => {
-      errors.append(&mut match &fun.in_external_namespace {
-        None => get_lint_errors_for_function(&node, |name| { vars.constants.contains(name)  }, code),
-        Some(namespace) => get_lint_errors_for_function(&node, |name| {
+      node = match &fun.in_external_namespace {
+        None => add_lint_errors_for_function(node, |name| { vars.constants.contains(name) }, code),
+        Some(namespace) => add_lint_errors_for_function(node, |name| {
           let empty = HashSet::default();
           let class_vars = vars.namespaces.get(namespace).unwrap_or(&empty);
           class_vars.contains(name) || vars.constants.contains(name)
         }, code),
-      });
+      };
     },
     Kind::Type|Kind::Reference(_)  => (),
     Kind::Variable(var) => {
@@ -373,12 +385,13 @@ fn add_lint_errors_for_node(node: AST, code: &TextFile, vars: &InScope) -> AST {
   node
 }
 
-fn get_lint_errors_for_function<F>(input: &AST, in_scope: F, code: &TextFile) -> Vec<LintError>
+fn add_lint_errors_for_function<F>(input: AST, in_scope: F, code: &TextFile) -> AST
 where
   F: Fn(&str) -> bool,
 {
+  let mut input = input;
   let mut errors = vec![];
-  let vars_in_scope = get_vars_in_scope(input);
+  let vars_in_scope = get_vars_in_scope(&input);
 
   for node in input.children.iter() {
     match &node.kind {
@@ -404,7 +417,15 @@ where
       _ => todo!("node {:?} not yet implemented", node.kind)
     }
   }
-  errors
+
+  for err in errors.into_iter() {
+    input.children.push(AST {
+      kind: Kind::LintError(err.message),
+      range: err.range,
+      ..AST::default()
+    });
+  }
+  input
 }
 
 fn filter_references_in_function<F>(input: AST, in_scope: F) -> AST
