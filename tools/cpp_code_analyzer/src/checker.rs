@@ -53,7 +53,7 @@ fn add_lint_errors_to_codechunk(ast: Vec<AST>, code: &TextFile, vars: &InScope) 
           add_lint_errors_for_node(node, &source, &vars)
         }).collect();
       },
-      _ => todo!(),
+      _ => (),
     }
     node
   }).collect()
