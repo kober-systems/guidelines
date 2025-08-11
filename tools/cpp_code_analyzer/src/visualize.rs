@@ -56,6 +56,68 @@ pub fn visualize(ast: Vec<AST>, code: &str) -> String {
   svg.finalize()
 }
 
+pub fn to_graphviz(ast: Vec<AST>, code: &str) -> String {
+  let ast = crate::checker::filter_references_in_scope(ast);
+  let ast = crate::checker::add_lint_errors(ast);
+  let g = ast_to_graph(ast, code);
+  let g = remove_visual_noise(g);
+
+  let mut out = "digraph Code {\n".to_string();
+  out.push_str(" concentrate=True;\n");
+  out.push_str(" rankdir=BT;\n\n");
+
+  for (key, node) in g.nodes.iter() {
+    out.push_str(&key.replace(":", "_"));
+    out.push_str(" [");
+    out.push_str("label=\"");
+    out.push_str(key);
+    out.push_str("\";");
+    if !node.problematic.is_empty() {
+      out.push_str("color=red;");
+    } else {
+      out.push_str("color=black;");
+    }
+    match node.kind.as_str() {
+      "Ref" => {
+        out.push_str("style=dotted;");
+      }
+      "V" => {
+        out.push_str("shape=ellipse;");
+      }
+      "F" => {
+        out.push_str("shape=parallelogram;");
+      }
+      _ => {
+        out.push_str("shape=box;");
+      }
+    }
+    out.push_str("]\n");
+  }
+
+  for con in g.connections.iter() {
+    out.push_str(&con.from.replace(":", "_"));
+    out.push_str(" -> ");
+    out.push_str(&con.to.replace(":", "_"));
+    out.push_str(" [");
+    if !con.problematic.is_empty() {
+      out.push_str("color=red;");
+    }
+    match con.kind {
+      ConnectionType::Composition => {
+        out.push_str("arrowhead=diamond;");
+      }
+      ConnectionType::Usage => {
+        out.push_str("style=dashed;");
+      }
+      ConnectionType::Inheritance => ()
+    }
+    out.push_str("]\n");
+  }
+
+  out.push_str("}");
+  out
+}
+
 fn visualize_graph_data(g: GraphData, vg: &mut VisualGraph) {
   let mut handles: BTreeMap<String, NodeHandle> = BTreeMap::default();
 

@@ -8,7 +8,7 @@ use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use codespan_reporting::term;
 use cpp_code_analyzer::ast::{Kind, AST};
-use cpp_code_analyzer::visualize::visualize;
+use cpp_code_analyzer::visualize::{to_graphviz, visualize};
 use cpp_code_analyzer::{checker, parser};
 
 #[derive(Parser)]
@@ -19,16 +19,20 @@ struct Args {
     input: PathBuf,
     #[arg(long)]
     svg: bool,
+    #[arg(long)]
+    dot: bool,
 }
 
 fn main() -> io::Result<()> {
     let args = Args::parse();
 
     let entries = get_sources_from_dir(&args.input)?;
-    if !args.svg {
-      print_all_errors(entries);
-    } else {
+    if args.svg {
       to_svg(entries);
+    } else if args.dot {
+      to_dot(entries);
+    } else {
+      print_all_errors(entries);
     }
     Ok(())
 }
@@ -65,6 +69,10 @@ fn print_all_errors(ast: Vec<AST>) {
 
 fn to_svg(ast: Vec<AST>) {
   println!("{}", visualize(ast, ""));
+}
+
+fn to_dot(ast: Vec<AST>) {
+  println!("{}", to_graphviz(ast, ""));
 }
 
 fn get_sources_from_dir(dir: &Path) -> io::Result<Vec<AST>> {
