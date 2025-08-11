@@ -2,19 +2,20 @@ use std::collections::{HashMap, HashSet};
 
 use crate::ast::{AST, Kind, Function, LintError, Reference};
 
-pub fn check_global_codechunk(ast: &Vec<AST>) -> Vec<LintError> {
-  let vars = get_scope(ast);
+pub fn check_global_codechunk(ast: Vec<AST>) -> Vec<LintError> {
+  let vars = get_scope(&ast);
   let source = TextFile {
     content: "".to_string(),
     file_path: "".to_string(),
   };
+  let ast = add_lint_errors_to_codechunk(ast, &source, &vars);
   error_message_from_global_codechunk(ast, &source, &vars)
 }
 
-fn error_message_from_global_codechunk(ast: &Vec<AST>, code: &TextFile, vars: &InScope) -> Vec<LintError> {
+fn error_message_from_global_codechunk(ast: Vec<AST>, code: &TextFile, vars: &InScope) -> Vec<LintError> {
   let mut errors = vec![];
   for node in ast.into_iter() {
-    errors.append(&mut error_message_from_ast(&node, code, &vars));
+    errors.append(&mut error_message_from_ast(node, code, &vars));
   }
 
   errors
@@ -30,16 +31,26 @@ pub fn add_lint_errors(ast: Vec<AST>) -> Vec<AST> {
           content: content.clone(),
           file_path: node.name.clone(),
         };
-        node.children = node.children.into_iter().map(|mut node| {
-          let errors = get_lint_errors_for_node(&node, &source, &vars);
-          for err in errors.into_iter() {
-            node.children.push(AST {
-              kind: Kind::LintError(err.message),
-              range: err.range,
-              ..AST::default()
-            });
-          }
-          node
+        node.children = node.children.into_iter().map(|node| {
+          add_lint_errors_for_node(node, &source, &vars)
+        }).collect();
+      },
+      _ => todo!("{:?}", node.kind),
+    }
+    node
+  }).collect()
+}
+
+fn add_lint_errors_to_codechunk(ast: Vec<AST>, code: &TextFile, vars: &InScope) -> Vec<AST> {
+  ast.into_iter().map(|mut node| {
+    match &node.kind {
+      Kind::File { content } => {
+        let source = TextFile {
+          content: content.clone(),
+          file_path: node.name.clone(),
+        };
+        node.children = node.children.into_iter().map(|node| {
+          add_lint_errors_for_node(node, &source, &vars)
         }).collect();
       },
       _ => todo!(),
@@ -129,13 +140,13 @@ fn check_abstract_class(node: &AST, class_name: &str, code: &TextFile) -> Vec<Li
         }
         errors.append(&mut check_function_is_virtual(&child, &fun, class_name, code));
       },
-      Kind::Type|Kind::Reference(_)  => (),
+      Kind::Type|Kind::Reference(_)|Kind::LintError(_)   => (),
       Kind::Unhandled(element) => errors.push(LintError {
         message: element.clone(),
         range: child.range.clone(),
         file_path: code.file_path.clone(),
       }),
-      _ => todo!(),
+      _ => todo!("{:?}", child.kind),
     }
   }
 
@@ -172,11 +183,7 @@ fn check_derived_class(node: &AST, class_name: &str, code: &TextFile, vars: &InS
           class_vars.contains(name) || vars.constants.contains(name)
         }, code));
       },
-      Kind::LintError(msg) => errors.push(LintError {
-        message: msg.clone(),
-        range: child.range.clone(),
-        file_path: code.file_path.clone(),
-      }),
+      Kind::LintError(_) => (),
       Kind::Unhandled(element) => errors.push(LintError {
         message: element.clone(),
         range: child.range.clone(),
@@ -274,7 +281,7 @@ fn prohibit_init_function(field: &AST, class_name: &str, code: &TextFile) -> Vec
   errors
 }
 
-fn error_message_from_ast(input: &AST, code: &TextFile, vars: &InScope) -> Vec<LintError> {
+fn error_message_from_ast(input: AST, code: &TextFile, vars: &InScope) -> Vec<LintError> {
   let mut errors = vec![];
 
   match &input.kind {
@@ -283,63 +290,87 @@ fn error_message_from_ast(input: &AST, code: &TextFile, vars: &InScope) -> Vec<L
         content: content.clone(),
         file_path: input.name.clone(),
       };
-      errors.append(&mut error_message_from_global_codechunk(&input.children, &source, vars));
+      errors.append(&mut error_message_from_global_codechunk(input.children, &source, vars));
     }
-    _ => errors.append(&mut get_lint_errors_for_node(input, code, vars)),
+    _ => errors.append(&mut get_lint_errors_for_node(&input, code, vars)),
   }
 
   errors
 }
 
 fn get_lint_errors_for_node(input: &AST, code: &TextFile, vars: &InScope) -> Vec<LintError> {
-  let name = &input.name;
+  let mut errors = vec![];
   match &input.kind {
+    Kind::Unhandled(element)|Kind::LintError(element) => errors.push(LintError {
+      message: element.clone(),
+      range: input.range.clone(),
+      file_path: code.file_path.clone(),
+    }),
+    _ => {
+      for child in input.children.iter() {
+        errors.append(&mut get_lint_errors_for_node(child, code, vars));
+      }
+    }
+  };
+  errors
+}
+
+fn add_lint_errors_for_node(node: AST, code: &TextFile, vars: &InScope) -> AST {
+  let mut node = node;
+  let mut errors = vec![];
+  let name = &node.name;
+  match &node.kind {
     Kind::Class(ref cl) => {
-      let mut errors = vec![];
       if cl.is_abstract {
-        errors.append(&mut check_abstract_class(&input, &name, code));
+        errors.append(&mut check_abstract_class(&node, &name, code));
       } else {
-        errors.append(&mut check_derived_class(&input, &name, code, vars));
-        if input.dependencies.len() == 0 {
+        errors.append(&mut check_derived_class(&node, &name, code, vars));
+        if node.dependencies.len() == 0 {
           errors.push(LintError {
             message: format!("Class '{name}' must be derived from abstract interface"),
-            range: input.range.clone(),
+            range: node.range.clone(),
             file_path: code.file_path.clone(),
           });
         }
       }
-      errors.append(&mut check_derives(input, code));
-      errors
+      errors.append(&mut check_derives(&node, code));
     }
     Kind::Function(fun) => {
-      match &fun.in_external_namespace {
-        None => get_lint_errors_for_function(input, |name| { vars.constants.contains(name)  }, code),
-        Some(namespace) => get_lint_errors_for_function(input, |name| {
+      errors.append(&mut match &fun.in_external_namespace {
+        None => get_lint_errors_for_function(&node, |name| { vars.constants.contains(name)  }, code),
+        Some(namespace) => get_lint_errors_for_function(&node, |name| {
           let empty = HashSet::default();
           let class_vars = vars.namespaces.get(namespace).unwrap_or(&empty);
           class_vars.contains(name) || vars.constants.contains(name)
         }, code),
-      }
+      });
     },
-    Kind::Type|Kind::Reference(_)  => vec![],
+    Kind::Type|Kind::Reference(_)  => (),
     Kind::Variable(var) => {
-      let mut errors = vec![];
       if !var.is_const {
         errors.push(LintError {
-          message: format!("It's not allowed to create global variables ('{}'). Global variables create invisible coupling.", input.name),
-          range: input.range.clone(),
+          message: format!("It's not allowed to create global variables ('{}'). Global variables create invisible coupling.", node.name),
+          range: node.range.clone(),
           file_path: code.file_path.clone(),
         });
       };
-      errors
     }
-    Kind::Unhandled(element) => vec![LintError {
+    Kind::Unhandled(element) => errors.push(LintError {
       message: element.clone(),
-      range: input.range.clone(),
+      range: node.range.clone(),
       file_path: code.file_path.clone(),
-    }],
-    _ => todo!("{:?}", input.kind)
+    }),
+    _ => todo!("{:?}", node.kind)
+  };
+
+  for err in errors.into_iter() {
+    node.children.push(AST {
+      kind: Kind::LintError(err.message),
+      range: err.range,
+      ..AST::default()
+    });
   }
+  node
 }
 
 fn get_lint_errors_for_function<F>(input: &AST, in_scope: F, code: &TextFile) -> Vec<LintError>

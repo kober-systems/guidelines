@@ -26,25 +26,25 @@ fn main() -> io::Result<()> {
 
     let entries = get_sources_from_dir(&args.input)?;
     if !args.svg {
-      print_all_errors(&entries);
+      print_all_errors(entries);
     } else {
       to_svg(entries);
     }
     Ok(())
 }
 
-fn print_all_errors(ast: &Vec<AST>) {
+fn print_all_errors(ast: Vec<AST>) {
   let mut files = SimpleFiles::new();
   let mut mapping = HashMap::<String, usize>::default();
 
   for ast in ast.iter() {
     if let Kind::File { content } = &ast.kind {
-      let file_id = files.add(&ast.name, content);
-      mapping.insert(ast.name.clone(), file_id);
+      let file_id = files.add(ast.name.to_string(), content.to_string());
+      mapping.insert(ast.name.to_string(), file_id);
     }
   }
 
-  let errors = checker::check_global_codechunk(&ast);
+  let errors = checker::check_global_codechunk(ast);
 
   let writer = StandardStream::stderr(ColorChoice::Always);
   let config = codespan_reporting::term::Config::default();
