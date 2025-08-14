@@ -8,7 +8,7 @@ pub fn check_global_codechunk(ast: Vec<AST>) -> Vec<LintError> {
     content: "".to_string(),
     file_path: "".to_string(),
   };
-  let ast = add_lint_errors_to_codechunk(ast, &source, &vars);
+  let ast = add_lint_errors_to_codechunk(ast, &vars);
   error_message_from_global_codechunk(ast, &source, &vars)
 }
 
@@ -41,7 +41,7 @@ pub fn add_lint_errors(ast: Vec<AST>) -> Vec<AST> {
   }).collect()
 }
 
-fn add_lint_errors_to_codechunk(ast: Vec<AST>, code: &TextFile, vars: &InScope) -> Vec<AST> {
+fn add_lint_errors_to_codechunk(ast: Vec<AST>, vars: &InScope) -> Vec<AST> {
   ast.into_iter().map(|mut node| {
     match &node.kind {
       Kind::File { content } => {
@@ -140,7 +140,7 @@ fn check_abstract_class(node: &AST, class_name: &str, code: &TextFile) -> Vec<Li
         }
         errors.append(&mut check_function_is_virtual(&child, &fun, class_name, code));
       },
-      Kind::Type|Kind::Reference(_)|Kind::LintError(_)   => (),
+      Kind::Type|Kind::Reference(_)|Kind::LintError(_) => (),
       Kind::Unhandled(element) => errors.push(LintError {
         message: element.clone(),
         range: child.range.clone(),
@@ -194,7 +194,7 @@ fn check_derived_class(node: AST, class_name: &str, code: &TextFile, vars: &InSc
         });
         child
       },
-      Kind::Type|Kind::Reference(_)  => child,
+      Kind::Type|Kind::Reference(_) => child,
       _ => unreachable!(),
     }
   }).collect();
@@ -357,7 +357,7 @@ fn add_lint_errors_for_node(node: AST, code: &TextFile, vars: &InScope) -> AST {
         }, code),
       };
     },
-    Kind::Type|Kind::Reference(_)  => (),
+    Kind::Type|Kind::Reference(_) => (),
     Kind::Variable(var) => {
       if !var.is_const {
         errors.push(LintError {
