@@ -208,6 +208,88 @@ private:
   });
 }
 
+#[test]
+fn show_call_dependencies_on_functions() {
+  let code = r#"
+static int helper_function() {
+  return 42;
+}
+
+void public_function() {
+  helper_function();
+}
+
+class AbstractInterface {
+public:
+  virtual ~AbstractInterface() = default;
+  virtual void foo() = 0;
+};
+
+class Derived: public AbstractInterface {
+  Derived() {}
+  int foo(int param) {
+    return param + helper_function();
+  }
+  int bar(int p1) {
+    public_function();
+    return p1;
+  }
+};
+
+"#;
+  let g = parse_to_graph(code);
+  assert_eq!(g, GraphData {
+    nodes: BTreeMap::from([
+      ("AbstractInterface".to_string(), Entity {
+        kind: "A".to_string(),
+        name: "AbstractInterface".to_string(),
+        problematic: vec![],
+      }),
+      ("Derived".to_string(), Entity {
+        kind: "C".to_string(),
+        name: "Derived".to_string(),
+        problematic: vec![],
+      }),
+      ("public_function".to_string(), Entity {
+        kind: "F".to_string(),
+        name: "public_function".to_string(),
+        problematic: vec![],
+      }),
+      ("helper_function".to_string(), Entity {
+        kind: "F".to_string(),
+        name: "helper_function".to_string(),
+        problematic: vec![],
+      }),
+    ]),
+    connections: vec![
+      Connection {
+        kind: ConnectionType::Usage,
+        from: "public_function".to_string(),
+        to: "helper_function".to_string(),
+        problematic: vec![],
+      },
+      Connection {
+        kind: ConnectionType::Inheritance,
+        from: "Derived".to_string(),
+        to: "AbstractInterface".to_string(),
+        problematic: vec![],
+      },
+      Connection {
+        kind: ConnectionType::Usage,
+        from: "Derived".to_string(),
+        to: "helper_function".to_string(),
+        problematic: vec![],
+      },
+      Connection {
+        kind: ConnectionType::Usage,
+        from: "Derived".to_string(),
+        to: "public_function".to_string(),
+        problematic: vec![],
+      },
+    ],
+  });
+}
+
 fn parse_to_graph(code: &str) -> GraphData {
   let ast = vec![parser::parse_cpp_chunc("sample.cpp", code)];
   let ast = checker::filter_references_in_scope(ast);

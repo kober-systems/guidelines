@@ -445,10 +445,10 @@ where
         use Reference::*;
         match ref_kind {
           Read|Write => !vars_in_scope.contains(&node.name) && !in_scope(&node.name),
-          Call|TypeRead|Depend => false,
+          Call|TypeRead|Depend => true,
         }
       }
-      _ => false,
+      _ => true,
     }
   }).collect();
   AST {
