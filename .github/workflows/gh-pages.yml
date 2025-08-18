@@ -36,16 +36,16 @@ jobs:
             mkdir _site
             mkdir _site/published
             cp -R img/ _site
-            index=""
+            echo "" > index.adoc
             for file in published/*.adoc
             do
               asciidoctor --destination-dir=_site/published "$file"
-              index="${index}\n* ${file}\n"
+              echo "* ${file}" >> index.adoc
             done
             for file in draft/*.adoc
             do
               asciidoctor --destination-dir=_site/draft "$file"
-              index="${index}\n* ${file}\n"
+              echo "* ${file}" >> index.adoc
             done
             ls -la _site
             echo $index > index.adoc
