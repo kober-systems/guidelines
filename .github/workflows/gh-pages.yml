@@ -43,7 +43,7 @@ jobs:
               echo "== ${folder}" >> index.adoc
               for file in ${folder}/*.adoc
               do
-                asciidoctor --destination-dir="_site/${folder}" "$file"
+                asciidoctor --destination-dir="_site/${folder}" --attribute="toc=left" "$file"
                 name=`basename $file`
                 echo "* link:${folder}/${name%.*}.html[]" >> index.adoc
               done
