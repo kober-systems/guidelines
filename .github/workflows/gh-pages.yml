@@ -40,15 +40,16 @@ jobs:
             for file in published/*.adoc
             do
               asciidoctor --destination-dir=_site/published "$file"
-              index="${index}* ${file}\n"
+              index="${index}\n* ${file}\n"
             done
             for file in draft/*.adoc
             do
               asciidoctor --destination-dir=_site/draft "$file"
-              index="${index}* ${file}\n"
+              index="${index}\n* ${file}\n"
             done
             ls -la _site
             echo $index > index.adoc
+            cat index.adoc
             asciidoctor --destination-dir=_site index.adoc
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
