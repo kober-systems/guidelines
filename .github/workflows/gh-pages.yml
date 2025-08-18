@@ -36,9 +36,18 @@ jobs:
             mkdir _site
             mkdir _site/published
             cp -R img/ _site
-            asciidoctor --destination-dir=_site/draft 'draft/**.adoc'
-            asciidoctor --destination-dir=_site/published 'published/**.adoc'
+            index = ""
+            for file in published/*.adoc do
+              asciidoctor --destination-dir=_site/published "$file"
+              index = "${index}* ${file}\n"
+            done
+            for file in draft/*.adoc do
+              asciidoctor --destination-dir=_site/draft "$file"
+              index = "${index}* ${file}\n"
+            done
             ls -la _site
+            echo $index > index.adoc
+            asciidoctor --destination-dir=_site index.adoc
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 
