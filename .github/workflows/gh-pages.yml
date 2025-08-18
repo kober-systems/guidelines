@@ -37,15 +37,18 @@ jobs:
             mkdir _site/published
             cp -R img/ _site
             echo "" > index.adoc
+            echo "== published" >> index.adoc
             for file in published/*.adoc
             do
               asciidoctor --destination-dir=_site/published "$file"
               echo "* ${file}" >> index.adoc
             done
+            echo "== Drafts" >> index.adoc
             for file in draft/*.adoc
             do
               asciidoctor --destination-dir=_site/draft "$file"
-              echo "* ${file}" >> index.adoc
+              name=`basename $file`
+              echo "* link:draft/${name}.html[]" >> index.adoc
             done
             ls -la _site
             cat index.adoc
