@@ -34,11 +34,11 @@ jobs:
         with:
           program: |
             mkdir _site
-            cp -R published _site
+            cp -R published/* _site
             ls -la
-            ech "_site/"
+            echo "_site/"
             ls -la _site
-            asciidoctor '_site/**.adoc'
+            asciidoctor 'published/**.adoc'
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 
