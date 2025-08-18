@@ -34,10 +34,7 @@ jobs:
         with:
           program: |
             mkdir _site
-            cp -R published/* _site
-            ls -la
-            echo "_site/"
-            ls -la _site
+            cp -R img/ _site
             asciidoctor --destination-dir=_site 'published/**.adoc'
             ls -la _site
       - name: Upload artifact
