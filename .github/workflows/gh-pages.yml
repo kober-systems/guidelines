@@ -34,8 +34,10 @@ jobs:
         with:
           program: |
             mkdir _site
+            mkdir _site/published
             cp -R img/ _site
-            asciidoctor --destination-dir=_site 'published/**.adoc'
+            asciidoctor --destination-dir=_site/draft 'draft/**.adoc'
+            asciidoctor --destination-dir=_site/published 'published/**.adoc'
             ls -la _site
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
