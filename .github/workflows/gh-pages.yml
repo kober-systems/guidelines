@@ -49,22 +49,6 @@ jobs:
               done
             done
 
-            echo "" >> index.adoc
-            echo "== Published" >> index.adoc
-            for file in published/*.adoc
-            do
-              asciidoctor --destination-dir=_site/published "$file"
-              name=`basename $file`
-              echo "* link:published/${name%.*}.html[]" >> index.adoc
-            done
-            echo "" >> index.adoc
-            echo "== Drafts" >> index.adoc
-            for file in draft/*.adoc
-            do
-              asciidoctor --destination-dir=_site/draft "$file"
-              name=`basename $file`
-              echo "* link:draft/${name%.*}.html[]" >> index.adoc
-            done
             asciidoctor --destination-dir=_site index.adoc
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

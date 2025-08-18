@@ -8,7 +8,7 @@ Status:: Active
 Date:: 2025-05-30
 
 This guideline is created according to the
-https://github.com/kober-systems/guidelines/blob/main/published/guidelines_standard_v0-1-0.adoc["Guidelines
+https://kober-systems.github.io/guidelines/published/guidelines_standard_v0-1-0.html["Guidelines
 Standard" v0.1.0].
 
 == Overview
