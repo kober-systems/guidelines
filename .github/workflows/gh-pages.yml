@@ -41,7 +41,8 @@ jobs:
             for file in published/*.adoc
             do
               asciidoctor --destination-dir=_site/published "$file"
-              echo "* ${file}" >> index.adoc
+              name=`basename $file`
+              echo "* link:draft/${name%.*}.html[]" >> index.adoc
             done
             echo "" >> index.adoc
             echo "== Drafts" >> index.adoc
