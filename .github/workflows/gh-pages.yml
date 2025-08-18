@@ -36,7 +36,7 @@ jobs:
             ls -la
             mkdir _site
             cp -R published _site
-            asciidoctor _site/**.adoc
+            asciidoctor '_site/**.adoc'
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 
