@@ -33,9 +33,11 @@ jobs:
         uses: tonynv/asciidoctor-action@master
         with:
           program: |
-            ls -la
             mkdir _site
             cp -R published _site
+            ls -la
+            ech "_site/"
+            ls -la _site
             asciidoctor '_site/**.adoc'
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
