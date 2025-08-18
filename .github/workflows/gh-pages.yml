@@ -48,7 +48,6 @@ jobs:
               echo "* ${file}" >> index.adoc
             done
             ls -la _site
-            echo $index > index.adoc
             cat index.adoc
             asciidoctor --destination-dir=_site index.adoc
       - name: Upload artifact
