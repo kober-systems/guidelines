@@ -31,11 +31,12 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Asciidoc to html
         uses: tonynv/asciidoctor-action@master
-        run: |
-          ls -la
-          mkdir _site
-          cp -R published _site
-          asciidoctor _site/**.adoc
+        with:
+          program: |
+            ls -la
+            mkdir _site
+            cp -R published _site
+            asciidoctor _site/**.adoc
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 
