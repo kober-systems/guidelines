@@ -36,7 +36,20 @@ jobs:
             mkdir _site
             mkdir _site/published
             cp -R img/ _site
-            echo "" > index.adoc
+            echo "= Guidelines" > index.adoc
+            for folder in ["active", "draft", "deprecated", "retired", "published"]
+            do
+              echo "" >> index.adoc
+              echo "== ${folder}" >> index.adoc
+              for file in ${folder}/*.adoc
+              do
+                asciidoctor --destination-dir="_site/${folder}" "$file"
+                name=`basename $file`
+                echo "* link:${folder}/${name%.*}.html[]" >> index.adoc
+              done
+            done
+
+            echo "" >> index.adoc
             echo "== Published" >> index.adoc
             for file in published/*.adoc
             do
@@ -52,8 +65,6 @@ jobs:
               name=`basename $file`
               echo "* link:draft/${name%.*}.html[]" >> index.adoc
             done
-            ls -la _site
-            cat index.adoc
             asciidoctor --destination-dir=_site index.adoc
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
