@@ -37,7 +37,7 @@ jobs:
             mkdir _site/published
             cp -R img/ _site
             echo "= Guidelines" > index.adoc
-            for folder in ["active", "draft", "deprecated", "retired", "published"]
+            for folder in "active" "draft" "deprecated" "retired" "published"
             do
               echo "" >> index.adoc
               echo "== ${folder}" >> index.adoc
