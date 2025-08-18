@@ -42,7 +42,7 @@ jobs:
             do
               asciidoctor --destination-dir=_site/published "$file"
               name=`basename $file`
-              echo "* link:draft/${name%.*}.html[]" >> index.adoc
+              echo "* link:published/${name%.*}.html[]" >> index.adoc
             done
             echo "" >> index.adoc
             echo "== Drafts" >> index.adoc
