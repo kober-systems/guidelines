@@ -37,11 +37,13 @@ jobs:
             mkdir _site/published
             cp -R img/ _site
             index=""
-            for file in published/*.adoc do
+            for file in published/*.adoc
+            do
               asciidoctor --destination-dir=_site/published "$file"
               index="${index}* ${file}\n"
             done
-            for file in draft/*.adoc do
+            for file in draft/*.adoc
+            do
               asciidoctor --destination-dir=_site/draft "$file"
               index="${index}* ${file}\n"
             done
