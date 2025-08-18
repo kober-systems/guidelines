@@ -38,7 +38,8 @@ jobs:
             ls -la
             echo "_site/"
             ls -la _site
-            asciidoctor 'published/**.adoc'
+            asciidoctor --destination-dir=_site 'published/**.adoc'
+            ls -la _site
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 
