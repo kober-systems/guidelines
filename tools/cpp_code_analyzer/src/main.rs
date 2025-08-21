@@ -20,6 +20,9 @@ struct Args {
     /// Output format
     #[arg(short, long, value_enum, default_value_t=OutputType::Terminal)]
     format: OutputType,
+    /// Fix problems interactivly
+    #[arg(long, default_value_t=false)]
+    interactive: bool,
 }
 
 #[derive(ValueEnum, Clone, Copy)]
@@ -27,6 +30,7 @@ enum OutputType {
   /// Print out on the terminal
   Terminal,
   Svg,
+  /// Graphviz dot format
   Dot,
   Graphml,
 }
@@ -38,7 +42,7 @@ fn main() -> io::Result<()> {
 
     use  OutputType::*;
     match args.format {
-      Terminal => print_all_errors(entries),
+      Terminal => print_all_errors(entries, args.interactive),
       Svg => to_svg(entries),
       Dot => to_dot(entries),
       Graphml => {
@@ -48,7 +52,7 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn print_all_errors(ast: Vec<AST>) {
+fn print_all_errors(ast: Vec<AST>, fix_interactive: bool) {
   let mut files = SimpleFiles::new();
   let mut mapping = HashMap::<String, usize>::default();
 
@@ -64,6 +68,7 @@ fn print_all_errors(ast: Vec<AST>) {
   let writer = StandardStream::stderr(ColorChoice::Always);
   let config = codespan_reporting::term::Config::default();
 
+  let mut user_input = String::new();
   for error in errors.iter() {
     let file_id = mapping.get(&error.file_path).unwrap_or(&0);
     let diagnostic = Diagnostic::error()
@@ -71,8 +76,16 @@ fn print_all_errors(ast: Vec<AST>) {
         .with_labels(vec![
             Label::primary(*file_id, error.range.start..error.range.end),
         ]);
+    let diagnostic = if fix_interactive {
+      diagnostic.with_note("no fix available. Hit any key to continue")
+    } else {
+      diagnostic
+    };
 
     term::emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
+    if fix_interactive {
+      std::io::stdin().read_line(&mut user_input).unwrap();
+    }
   }
 
   println!("found {} errors", errors.len());
