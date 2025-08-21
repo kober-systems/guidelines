@@ -118,6 +118,45 @@ pub fn to_graphviz(ast: Vec<AST>, code: &str) -> String {
   out
 }
 
+pub fn to_graphml(ast: Vec<AST>, code: &str) -> String {
+  let ast = crate::checker::filter_references_in_scope(ast);
+  let ast = crate::checker::add_lint_errors(ast);
+  let g = ast_to_graph(ast, code);
+  let g = remove_visual_noise(g);
+
+  let mut out = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".to_string();
+  out.push_str(
+    r#"<graphml xmlns="http://graphml.graphdrawing.org/xmlns"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns
+     http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">\n"#);
+
+  out.push_str(r#" <key id="label" for="node" attr.name="label" attr.type="string">\n"#);
+  out.push_str(r#" <key id="kind" for="node" attr.name="kind" attr.type="string">\n"#);
+  out.push_str(r#" <key id="is_problematic" for="all" attr.name="is_problematic" attr.type="boolean">\n"#);
+  out.push_str(r#"   <default>false</default>\n"#);
+  out.push_str(r#" </key>\n"#);
+
+  out.push_str(r#" <graph id="G" edgedefault="directed">\n"#);
+
+  for (key, node) in g.nodes.iter() {
+    out.push_str(&format!("    <node id=\"{key}\">\n"));
+    out.push_str(&format!("      <data key=\"label\">{key}</data>\n"));
+    out.push_str(&format!("      <data key=\"kind\">{}</data>\n", &node.kind));
+    out.push_str(&format!("      <data key=\"is_problematic\">{}</data>\n", !node.problematic.is_empty()));
+    out.push_str("    </node>\n");
+  }
+
+  for con in g.connections.iter() {
+    out.push_str(&format!("    <edge source=\"{}\" target=\"{}\">\n", con.from, con.to));
+    out.push_str(&format!("      <data key=\"is_problematic\">{}</data>\n", !con.problematic.is_empty()));
+    out.push_str("    </edge>\n");
+  }
+
+  out.push_str("  </graph>\n</graphml>");
+  out
+}
+
 fn visualize_graph_data(g: GraphData, vg: &mut VisualGraph) {
   let mut handles: BTreeMap<String, NodeHandle> = BTreeMap::default();
 

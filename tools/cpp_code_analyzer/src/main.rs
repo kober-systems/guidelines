@@ -2,13 +2,13 @@ use std::collections::HashMap;
 use std::{fs, io};
 use std::path::{Path, PathBuf};
 
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use codespan_reporting::term;
 use cpp_code_analyzer::ast::{Kind, AST};
-use cpp_code_analyzer::visualize::{to_graphviz, visualize};
+use cpp_code_analyzer::visualize::{to_graphml, to_graphviz, visualize};
 use cpp_code_analyzer::{checker, parser};
 
 #[derive(Parser)]
@@ -17,22 +17,33 @@ struct Args {
     /// File to check
     #[arg(short, long, value_name = "FILE")]
     input: PathBuf,
-    #[arg(long)]
-    svg: bool,
-    #[arg(long)]
-    dot: bool,
+    /// Output format
+    #[arg(short, long, value_enum, default_value_t=OutputType::Terminal)]
+    format: OutputType,
+}
+
+#[derive(ValueEnum, Clone, Copy)]
+enum OutputType {
+  /// Print out on the terminal
+  Terminal,
+  Svg,
+  Dot,
+  Graphml,
 }
 
 fn main() -> io::Result<()> {
     let args = Args::parse();
 
     let entries = get_sources_from_dir(&args.input)?;
-    if args.svg {
-      to_svg(entries);
-    } else if args.dot {
-      to_dot(entries);
-    } else {
-      print_all_errors(entries);
+
+    use  OutputType::*;
+    match args.format {
+      Terminal => print_all_errors(entries),
+      Svg => to_svg(entries),
+      Dot => to_dot(entries),
+      Graphml => {
+        println!("{}", to_graphml(entries, ""));
+      }
     }
     Ok(())
 }
