@@ -324,6 +324,7 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
       x if is_statement(x) => children.append(&mut extract_statement(&child, code)),
       x if is_update_expression(x) => children.append(&mut extract_update_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
+      "argument_list" => children.append(&mut extract_arguments(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("extract_declaration: {}", child.to_sexp())),

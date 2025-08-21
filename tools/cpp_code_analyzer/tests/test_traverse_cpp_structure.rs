@@ -69,6 +69,8 @@ int global_function(int param1) {
     return 42 | 0xff << -(1 >> 8);
   }
 
+  MyClass myclass(&param1);
+
   // comments should be ignored
   for (int i=0; i<42; i++) {
     2+40;
