@@ -522,10 +522,23 @@ struct InScope {
 }
 
 fn check_if_has_main_entrypoint(input: &AST) -> bool {
+  let mut has_setup = false;
+  let mut has_loop = false;
   for node in input.children.iter() {
     match node.kind {
-      Kind::Function(_) => if node.name.trim() == "main" {
-        return true;
+      Kind::Function(_) => match node.name.trim() {
+        "main" => {
+          return true;
+        }
+        "setup" => {
+          if has_loop { return true; }
+          has_setup = true;
+        }
+        "loop" => {
+          if has_setup { return true; }
+          has_loop = true;
+        }
+        _ => (),
       }
       _ => (),
     }

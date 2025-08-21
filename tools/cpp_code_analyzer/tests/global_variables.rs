@@ -36,6 +36,24 @@ int main(void) {
 }
 
 #[test]
+fn allow_definition_of_global_variables_with_setup_and_loop_function_present() {
+    let code = r#"
+int my_global = 42;
+
+int my_other_global;
+
+char my_global_array[42];
+
+void setup() {
+  return 42;
+}
+void loop() {}
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+
+#[test]
 fn allow_definition_of_constant_global_variables() {
     let code = r#"
 constexpr int my_constant_global = 42;
