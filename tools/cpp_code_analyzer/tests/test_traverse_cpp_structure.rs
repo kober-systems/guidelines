@@ -155,7 +155,7 @@ fn parse_preproc_args() {
     let code = r#"
 #define PREPROC_PARAM 20;
 
-#if defined(PROPROC_CONDITION)
+#if defined(PROPROC_CONDITION) && !defined (OTHE_CONDITION)
 #define PREPROC_PARAM2 42;
 #elif defined(ELSE_PREPROC_CONDITION)
 #define PREPROC_PARAM2 0;

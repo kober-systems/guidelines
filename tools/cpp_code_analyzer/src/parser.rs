@@ -27,7 +27,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
       "declaration" => base.children.append(&mut extract_declaration(&child, code, "public")),
       "preproc_ifdef"|"preproc_def"|"namespace_definition"
         |"declaration_list"|"preproc_if"|"preproc_elif"
-        |"preproc_else" => parse_global_codechunk(base, &child, code),
+        |"preproc_else"|"binary_expression"|"unary_expression" => parse_global_codechunk(base, &child, code),
       "preproc_include" => base.dependencies.push(parse_include(&child, code)),
       "identifier"|"namespace_identifier" => (), // ignoring identifiers on global level
       "template_declaration" => parse_global_codechunk(base, &child, code),
@@ -36,6 +36,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
         |"preproc_arg"|"namespace"|"#if"|"#elif"|"#else"
         |"preproc_defined"|"template"|"typedef" => (),
       ";"|"{"|"}"|"\n" => (),
+      x if is_read_operator(x) => (),
       "enum_specifier" => base.children.append(&mut parse_enum(&child, code)),
       "type_definition" => parse_global_codechunk(base, &child, code),
       "struct_specifier" => base.children.push(parse_struct(&child, code)),
