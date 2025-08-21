@@ -71,6 +71,8 @@ int global_function(int param1) {
 
   MyClass myclass(&param1);
 
+  int x = namespace1::fn();
+
   // comments should be ignored
   for (int i=0; i<42; i++) {
     2+40;

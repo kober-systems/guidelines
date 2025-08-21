@@ -465,7 +465,7 @@ fn extract_call_expression(node: &Node, code: &str) -> Vec<AST> {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "identifier" => children.push(AST {
+      "identifier"|"qualified_identifier" => children.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::Call),
         range,
