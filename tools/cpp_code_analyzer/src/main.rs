@@ -77,7 +77,7 @@ fn print_all_errors(ast: Vec<AST>, fix_interactive: bool) {
             Label::primary(*file_id, error.range.start..error.range.end),
         ]);
     let diagnostic = if fix_interactive {
-      diagnostic.with_note("no fix available. Hit any key to continue")
+      diagnostic.with_note("no fix available. Hit enter to continue")
     } else {
       diagnostic
     };
