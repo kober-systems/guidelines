@@ -28,7 +28,7 @@ int my_other_global;
 char my_global_array[42];
 
 int main(void) {
-  return 42;
+  return my_global;
 }
 "#;
     let errors = analyze_cpp(code);
@@ -45,7 +45,7 @@ int my_other_global;
 char my_global_array[42];
 
 void setup() {
-  return 42;
+  return my_global;
 }
 void loop() {}
 "#;

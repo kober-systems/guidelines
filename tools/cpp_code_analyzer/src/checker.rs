@@ -185,7 +185,7 @@ fn check_derived_class(node: AST, class_name: &str, code: &TextFile, vars: &InSc
           let empty = HashSet::default();
           let class_vars = vars.namespaces.get(&node.name).unwrap_or(&empty);
           class_vars.contains(name) || vars.constants.contains(name)
-        }, code)
+        }, code, false)
       },
       Kind::LintError(_) => child,
       Kind::Unhandled(element) => {
@@ -351,12 +351,12 @@ fn add_lint_errors_for_node(node: AST, code: &TextFile, vars: &InScope, has_main
     }
     Kind::Function(fun) => {
       node = match &fun.in_external_namespace {
-        None => add_lint_errors_for_function(node, |name| { vars.constants.contains(name) }, code),
+        None => add_lint_errors_for_function(node, |name| { vars.constants.contains(name) }, code, has_main_entrypoint),
         Some(namespace) => add_lint_errors_for_function(node, |name| {
           let empty = HashSet::default();
           let class_vars = vars.namespaces.get(namespace).unwrap_or(&empty);
           class_vars.contains(name) || vars.constants.contains(name)
-        }, code),
+        }, code, has_main_entrypoint),
       };
     },
     Kind::Type|Kind::Reference(_) => (),
@@ -387,7 +387,7 @@ fn add_lint_errors_for_node(node: AST, code: &TextFile, vars: &InScope, has_main
   node
 }
 
-fn add_lint_errors_for_function<F>(input: AST, in_scope: F, code: &TextFile) -> AST
+fn add_lint_errors_for_function<F>(input: AST, in_scope: F, code: &TextFile, has_main_entrypoint: bool) -> AST
 where
   F: Fn(&str) -> bool,
 {
@@ -400,7 +400,7 @@ where
       Kind::Reference(ref_kind) => {
         use Reference::*;
         match ref_kind {
-          Read|Write => if !vars_in_scope.contains(&node.name) && !in_scope(&node.name) {
+          Read|Write => if !vars_in_scope.contains(&node.name) && !in_scope(&node.name) && !has_main_entrypoint {
             node.children.push(AST {
               kind: Kind::LintError(format!("It's not allowed to use global variables ('{}'). Global variables create invisible coupling.", node.name)),
               range: node.range.clone(),
