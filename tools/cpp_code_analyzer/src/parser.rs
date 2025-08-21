@@ -307,7 +307,7 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
         children.append(&mut parse_enum(&child, code));
       }
       ";"|"{"|"}"|"("|")"|":"|"="|","|"*" => (),
-      "primitive_type"
+      "primitive_type"|"placeholder_type_specifier"
         |"type_qualifier"|"storage_class_specifier"|"attribute_specifier"
         |"sizeof_expression"|"sized_type_specifier"|"virtual" => (),
       "type_identifier" => {
