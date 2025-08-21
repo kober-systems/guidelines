@@ -519,7 +519,7 @@ fn extract_parameters(node: &Node, code: &str) -> Vec<AST> {
   for idx in 0..node.child_count() {
     let child = node.child(idx).unwrap();
     match child.kind() {
-      "parameter_declaration"|"optional_parameter_declaration" => children.push(extract_param(&child, code)),
+      "parameter_declaration"|"optional_parameter_declaration" => children.append(&mut extract_param(&child, code)),
       "("|")"|"," => (),
       "field_identifier"|"identifier"|"destructor_name" => (),
       "qualified_identifier" => (),
@@ -575,7 +575,7 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
   children
 }
 
-fn extract_param(node: &Node, code: &str) -> AST {
+fn extract_param(node: &Node, code: &str) -> Vec<AST> {
   let mut dependencies = vec![];
   let mut children = vec![];
   let mut name = "".to_string();
@@ -604,21 +604,19 @@ fn extract_param(node: &Node, code: &str) -> AST {
     }
   }
 
-  AST {
-    name: name.to_string(),
-    kind: if name != "" {
-      Kind::Variable(Variable {
+  if name != "" {
+    vec![AST {
+      name: name.to_string(),
+      kind: Kind::Variable(Variable {
         is_const: false,
         visibility: "public".to_string(),
-      })
-    } else {
-      Kind::Unhandled(format!("parameter not parsable: {}", node.to_sexp()))
-    },
-    children,
-    dependencies,
-    range: node.byte_range(),
-    ..AST::default()
-  }
+      }),
+      children,
+      dependencies,
+      range: node.byte_range(),
+      ..AST::default()
+    }]
+  } else { vec![] }
 }
 
 fn parse_enum(node: &Node, code: &str) -> Vec<AST> {

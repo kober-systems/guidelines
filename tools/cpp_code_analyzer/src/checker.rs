@@ -31,8 +31,9 @@ pub fn add_lint_errors(ast: Vec<AST>) -> Vec<AST> {
           content: content.clone(),
           file_path: node.name.clone(),
         };
+        let has_main_entrypoint = check_if_has_main_entrypoint(&node);
         node.children = node.children.into_iter().map(|node| {
-          add_lint_errors_for_node(node, &source, &vars)
+          add_lint_errors_for_node(node, &source, &vars, has_main_entrypoint)
         }).collect();
       },
       _ => todo!("{:?}", node.kind),
@@ -49,8 +50,9 @@ fn add_lint_errors_to_codechunk(ast: Vec<AST>, vars: &InScope) -> Vec<AST> {
           content: content.clone(),
           file_path: node.name.clone(),
         };
+        let has_main_entrypoint = check_if_has_main_entrypoint(&node);
         node.children = node.children.into_iter().map(|node| {
-          add_lint_errors_for_node(node, &source, &vars)
+          add_lint_errors_for_node(node, &source, &vars, has_main_entrypoint)
         }).collect();
       },
       _ => (),
@@ -327,7 +329,7 @@ fn get_lint_errors_for_node(input: &AST, code: &TextFile, vars: &InScope) -> Vec
   errors
 }
 
-fn add_lint_errors_for_node(node: AST, code: &TextFile, vars: &InScope) -> AST {
+fn add_lint_errors_for_node(node: AST, code: &TextFile, vars: &InScope, has_main_entrypoint: bool) -> AST {
   let mut node = node;
   let mut errors = vec![];
   let name = &node.name.clone();
@@ -359,7 +361,7 @@ fn add_lint_errors_for_node(node: AST, code: &TextFile, vars: &InScope) -> AST {
     },
     Kind::Type|Kind::Reference(_) => (),
     Kind::Variable(var) => {
-      if !var.is_const {
+      if !var.is_const && !has_main_entrypoint {
         errors.push(LintError {
           message: format!("It's not allowed to create global variables ('{}'). Global variables create invisible coupling.", node.name),
           range: node.range.clone(),
@@ -518,3 +520,17 @@ struct InScope {
   pub constants: HashSet<String>,
   pub namespaces: HashMap<String, HashSet<String>>
 }
+
+fn check_if_has_main_entrypoint(input: &AST) -> bool {
+  for node in input.children.iter() {
+    match node.kind {
+      Kind::Function(_) => if node.name.trim() == "main" {
+        return true;
+      }
+      _ => (),
+    }
+  }
+
+  false
+}
+
