@@ -4,9 +4,9 @@ Styleguide for Cpp Projects
 image::../img/status-draft.svg[]
 
 == Version
-Version:: v0.1.0
+Version:: v0.2.0
 Status:: Draft
-Date:: 2025-05-30
+Date:: 2025-08-25
 
 This guideline is created according to the
 https://kober-systems.github.io/guidelines/published/guidelines_standard_v0-1-0.html["Guidelines
@@ -138,7 +138,7 @@ private:
 
 |===
 
-===== Reasoning
+===== Why?
 This strict use of abstract interfaces encourages stronger
 modularization of the software. This, in turn, promotes
 https://en.wikipedia.org/wiki/Information_hiding[information
@@ -167,7 +167,7 @@ In the `main` or `setup` function, you will of course need concrete
 implementations. The classes used there SHOULD inherit from abstract
 classes.
 
-===== Reasoning
+===== Why?
 The reasons are the same as for abstract classes themselves. Only by
 deriving classes from abstract classes wherever possible do the benefits
 of abstract classes become available.
@@ -176,7 +176,7 @@ of abstract classes become available.
 Derived classes SHOULD NOT have an `init` function; instead, the class
 SHOULD be initialized directly in the constructor.
 
-===== Reasoning
+===== Why?
 If you have a separate `init` function, there is a difference in
 calling the other functions of a class, depending on whether the class
 has already been initialized or not. To avoid errors, you must catch
@@ -199,7 +199,7 @@ header is needed for compilation to make dependencies explicit.
 If a header is only needed for the implementation but not in the header,
 it MUST be moved to the source file (`*.cpp`).
 
-===== Reasoning
+===== Why?
 Dependencies can quickly arise unintentionally because you use
 a function/class/etc. from a header. This makes it difficult to
 restructure the source code later because you suddenly have more
@@ -217,7 +217,7 @@ to use the abstract interface. If they become dependent on the extra
 function, it is a sign that you should extend the abstract interface or
 create a new abstract interface.
 
-===== Reasoning
+===== Why?
 Dependencies can be reduced by declaring as much as possible as
 `private`. This encourages using the abstract interface and (if you
 reach limits) improving it, rather than building a solution that is
@@ -230,7 +230,7 @@ need for them in a using class or function.
 You should rather consider whether you cannot use a function with a
 specific action or pass a whole structure instead.
 
-===== Reasoning
+===== Why?
 The actual use cases usually define an action rather than setting
 a single value. Getter and setter functions often require a larger
 context to validate sensibly. Therefore, they are often a sign that
@@ -243,7 +243,7 @@ action, they enable misuse of the API much more easily.
 If you use data structures in a class and they can be queried or set,
 these MUST be passed by value and MUST NOT be passed by reference.
 
-===== Reasoning
+===== Why?
 If you return an internal structure as a reference, the calling function
 or class gets access to the internal implementation details of the
 respective class and can manipulate them without using the API. This
@@ -359,7 +359,7 @@ public:
 
 |===
 
-===== Reasoning
+===== Why?
 Defining data types within the class declaration helps avoid collisions
 in the namespaces, making compilation easier. Additionally, the
 names are shorter, which contributes to better readability and
@@ -372,10 +372,25 @@ An exception to this is in the file where the `main` or `setup` function
 is defined. Here a global variable MAY be defined and used. However all
 other code defined in other files MUST NOT use those global variables.
 
-===== Reasoning
+===== Why?
 The usage of global variables creates invisible coupling between
 otherwise unconnected parts of the code. The more it is used the more
 unmaintainable becomes a codebase.
+
+=== Bit Rot
+
+==== Aviod conditional compilation when possible
+Conditional compilation SHOULD NOT be used inside of classes or
+functions. Instead code should be written in a platform agnostic way.
+
+Compile switches MAY be used to decide whether whole files should be
+compiled or not.
+
+===== Why?
+Conditional compilation leads to bit rot. There will likely be parts
+of the code that get never compiled or never get testet. Whith good
+separation of concerns highly portable code can be written that does not
+need conditional compilation inside classes or functions.
 
 === General
 
@@ -383,7 +398,7 @@ unmaintainable becomes a codebase.
 In the source code, UTF-8 MUST be used as the encoding. Editors and IDEs
 must be configured accordingly.
 
-===== Reasoning
+===== Why?
 In some cases, we need special characters in the source code (e.g., for
 i18n strings). In this case, Unicode is the only standardized way to
 cover all current and future languages.
@@ -396,7 +411,7 @@ consumption.
 In the source code, spaces MUST be used for formatting instead of tabs.
 Editors and IDEs must be configured accordingly.
 
-===== Reasoning
+===== Why?
 If you use tabs, the formatting can be completely messed up on different
 systems, since the tab width can vary on different systems. Although
 the tab width can be configured in editors, the source code can be very

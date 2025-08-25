@@ -341,7 +341,7 @@ fn add_lint_errors_for_node(node: AST, code: &TextFile, vars: &InScope, has_main
         node = check_derived_class(node, &name, code, vars);
         if node.dependencies.len() == 0 {
           errors.push(LintError {
-            message: format!("Class '{name}' must be derived from abstract interface"),
+            message: format!("Class '{name}' should be derived from abstract interface"),
             range: node.range.clone(),
             file_path: code.file_path.clone(),
           });

@@ -31,7 +31,7 @@ private:
 "#;
     let errors = analyze_cpp(code);
     assert_eq!(errors, [
-      "Class 'MyClass' must be derived from abstract interface",
+      "Class 'MyClass' should be derived from abstract interface",
     ]);
 }
 
