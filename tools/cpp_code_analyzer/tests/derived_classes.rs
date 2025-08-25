@@ -90,7 +90,7 @@ public:
 #[test]
 fn can_explicitly_allow_public_attributes() {
     let code = r#"
-// lint: ignore E_MOD_01 reason: only used in testing scenarios
+// lint: ignore E_MODULES_DERIVED_CLASSES_ALL_ATTRS_PRIVATE reason: only used in testing scenarios
 class MyClass: public AbstractMyInterface {
 public:
     void foo();
