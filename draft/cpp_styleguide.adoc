@@ -24,6 +24,7 @@ here that should be implemented in all C++ projects.
 
 === Modularization
 
+[[modules_abstract_classes]]
 ==== Create abstract classes as interfaces
 Wherever possible, Abstract classes SHOULD be created as interfaces.
 
@@ -162,6 +163,7 @@ This results in several benefits: The software becomes
   a high-level view at every level. This makes every layer easy to
   understand on its own).
 
+[[modules_derive_from_abstract_classes]]
 ==== Derived classes should inherit from abstract classes
 In the `main` or `setup` function, you will of course need concrete
 implementations. The classes used there SHOULD inherit from abstract
@@ -172,6 +174,7 @@ The reasons are the same as for abstract classes themselves. Only by
 deriving classes from abstract classes wherever possible do the benefits
 of abstract classes become available.
 
+[[modules_no_init_function]]
 ==== Derived classes should not have an init function
 Derived classes SHOULD NOT have an `init` function; instead, the class
 SHOULD be initialized directly in the constructor.
@@ -187,6 +190,7 @@ computation for the check.
 If you perform the initialization in the constructor, an uninitialized
 state cannot occur when using the class.
 
+[[modules_avoid_unnecessary_headers]]
 ==== Only include necessary headers
 In all headers, only the absolutely necessary headers MUST be included.
 All headers that are not required for compiling the header MUST NOT be
@@ -206,6 +210,7 @@ restructure the source code later because you suddenly have more
 dependencies than expected. By only including the absolutely necessary
 headers, you minimize dependencies.
 
+[[modules_derived_classes_all_attrs_private]]
 ==== In derived classes, everything except the interface and constructor should be declared private
 In derived classes, all functions and attributes except the derived
 interface and the constructor SHOULD be declared `private`.
@@ -223,6 +228,7 @@ Dependencies can be reduced by declaring as much as possible as
 reach limits) improving it, rather than building a solution that is
 difficult to port to new environments and difficult to restructure.
 
+[[modules_avoid_getter_setter]]
 ==== Getter and setter functions should only be defined when necessary
 If you define getter or setter functions, there SHOULD be a concrete
 need for them in a using class or function.
