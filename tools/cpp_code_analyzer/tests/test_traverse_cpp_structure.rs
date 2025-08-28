@@ -53,7 +53,9 @@ public:
 #[test]
 fn parse_global_functions() {
     let code = r#"
-int global_function(int param1, float param2);
+int global_function(int param1, long param2);
+
+long f2(float param1);
 "#;
     let errors = analyze_cpp(code);
     assert_eq!(errors, Vec::<String>::new());
@@ -62,7 +64,7 @@ int global_function(int param1, float param2);
 #[test]
 fn parse_function_definitions() {
     let code = r#"
-int global_function(int param1) {
+int global_function(int param1, unsigned char param2) {
   if (true || true != false && ~1 == '\n') {
     return 42 * 1;
   } else {

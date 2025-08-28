@@ -346,7 +346,7 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
   for idx in 0..field.child_count() {
     let child = field.child(idx).unwrap();
     match child.kind() {
-      "primitive_type" => dependencies.push(AST {
+      "primitive_type"|"sized_type_specifier" => dependencies.push(AST {
         kind: Kind::Reference(Reference::TypeRead),
         range: child.byte_range(),
         ..AST::default()
@@ -590,7 +590,7 @@ fn extract_param(node: &Node, code: &str) -> Vec<AST> {
         name = get_variable_name(&child, code);
       }
       "primitive_type"|"type_identifier"|"struct_specifier"
-        |"function_declarator" => dependencies.push(AST {
+        |"function_declarator"|"sized_type_specifier" => dependencies.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::TypeRead),
         ..AST::default()
