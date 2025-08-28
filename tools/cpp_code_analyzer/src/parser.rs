@@ -751,9 +751,9 @@ fn parse_alias(node: &Node, code: &str) -> AST {
   }
 }
 
-fn get_class_name(cl: &Node, code: &str) -> String {
-  for idx in 0..cl.child_count() {
-    let child = cl.child(idx).unwrap();
+fn get_class_name(node: &Node, code: &str) -> String {
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
       "type_identifier" => {
@@ -765,7 +765,10 @@ fn get_class_name(cl: &Node, code: &str) -> String {
       _ => (),
     }
   }
-  panic!("each class must have a name!")
+  let range = node.byte_range();
+  let name = code[range.start..range.end].to_string();
+  log::error!("each class must have a name: {name}: {}", node.to_sexp());
+  name
 }
 
 fn get_variable_name(node: &Node, code: &str) -> String {
@@ -790,7 +793,10 @@ fn get_variable_name(node: &Node, code: &str) -> String {
     _ => (),
   }
 
-  panic!("each variable must have a name!")
+  let range = node.byte_range();
+  let name = code[range.start..range.end].to_string();
+  log::error!("could not find variable name: {name}: {}", node.to_sexp());
+  name
 }
 
 fn get_function_name(node: &Node, code: &str) -> (String, Option<String>) {
@@ -814,7 +820,10 @@ fn get_function_name(node: &Node, code: &str) -> (String, Option<String>) {
       _ => (),
     }
   }
-  panic!("each function must have a name!")
+  let range = node.byte_range();
+  let name = code[range.start..range.end].to_string();
+  log::error!("could not find function name: {name} {}", node.to_sexp());
+  (name, namespace)
 }
 
 fn check_is_const(node: &Node, code: &str) -> bool {
