@@ -309,9 +309,10 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
         children.append(&mut parse_enum(&child, code));
       }
       ";"|"{"|"}"|"("|")"|":"|"="|","|"*" => (),
-      "primitive_type"|"placeholder_type_specifier"
+      x if is_primitive_type(x) => (),
+      "placeholder_type_specifier"
         |"type_qualifier"|"storage_class_specifier"|"attribute_specifier"
-        |"sizeof_expression"|"sized_type_specifier"|"virtual" => (),
+        |"sizeof_expression"|"virtual" => (),
       "type_identifier" => {
         children.push(AST {
           name: code[range.start..range.end].to_string(),
@@ -346,7 +347,7 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
   for idx in 0..field.child_count() {
     let child = field.child(idx).unwrap();
     match child.kind() {
-      "primitive_type"|"sized_type_specifier" => dependencies.push(AST {
+      x if is_primitive_type(x) => dependencies.push(AST {
         kind: Kind::Reference(Reference::TypeRead),
         range: child.byte_range(),
         ..AST::default()
@@ -440,9 +441,10 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
       "sizeof_expression"|"delete" => (),
       "("|")"|"{"|"}"|";" => (),
       x if is_modify_operator(x) => (),
+      x if is_primitive_type(x) => (),
       "new" => (),
       "argument_list" => children.append(&mut extract_arguments(&child, code)),
-      "primitive_type"|"type_identifier"|"struct_specifier"
+      "type_identifier"|"struct_specifier"
         |"function_declarator" => children.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::TypeRead),
@@ -525,7 +527,8 @@ fn extract_parameters(node: &Node, code: &str) -> Vec<AST> {
       "("|")"|"," => (),
       "field_identifier"|"identifier"|"destructor_name" => (),
       "qualified_identifier" => (),
-      "operator_name"|"primitive_type" => (),
+      "operator_name" => (),
+      x if is_primitive_type(x) => (),
       "parameter_list" => children.append(&mut extract_parameters(&child, code)),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("extract_parameters: {}", child.to_sexp())),
@@ -589,8 +592,9 @@ fn extract_param(node: &Node, code: &str) -> Vec<AST> {
       "identifier"|"pointer_declarator"|"reference_declarator" => {
         name = get_variable_name(&child, code);
       }
-      "primitive_type"|"type_identifier"|"struct_specifier"
-        |"function_declarator"|"sized_type_specifier" => dependencies.push(AST {
+      x if is_primitive_type(x) => (),
+      "type_identifier"|"struct_specifier"
+        |"function_declarator" => dependencies.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::TypeRead),
         ..AST::default()
@@ -886,6 +890,13 @@ fn is_update_expression(kind: &str) -> bool {
   match kind {
     "update_expression"|"assignment_expression"
       |"delete_expression"|"new_expression" => true,
+    _ => false
+  }
+}
+
+fn is_primitive_type(kind: &str) -> bool {
+  match kind {
+    "primitive_type"|"sized_type_specifier" => true,
     _ => false
   }
 }
