@@ -589,7 +589,8 @@ fn extract_param(node: &Node, code: &str) -> Vec<AST> {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "identifier"|"pointer_declarator"|"reference_declarator" => {
+      "identifier"|"pointer_declarator"|"reference_declarator"
+        |"array_declarator" => {
         name = get_variable_name(&child, code);
       }
       x if is_primitive_type(x) => (),
