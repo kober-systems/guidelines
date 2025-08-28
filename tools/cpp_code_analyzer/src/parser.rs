@@ -262,7 +262,8 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
     let child = field.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "identifier"|"array_declarator"|"field_identifier" => {
+      "identifier"|"array_declarator"|"field_identifier"
+        |"qualified_identifier" => {
         children.push(AST {
           name: get_variable_name(&child, code),
           kind: Kind::Variable(Variable {

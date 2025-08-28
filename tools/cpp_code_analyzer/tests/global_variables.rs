@@ -189,6 +189,7 @@ enum myenum {
 };
 
 int function_call_other(int var) {
+  myenum e1 = myenum::variant1;
   return i + variant1 + myenum::variant2;
 }
 "#;
