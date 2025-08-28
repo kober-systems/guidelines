@@ -37,6 +37,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
         |"preproc_defined"|"template"|"typedef" => (),
       ";"|"{"|"}"|"\n" => (),
       x if is_read_operator(x) => (),
+      x if is_literal(x) => (),
       "enum_specifier" => base.children.append(&mut parse_enum(&child, code)),
       "type_definition" => parse_global_codechunk(base, &child, code),
       "struct_specifier" => base.children.push(parse_struct(&child, code)),
