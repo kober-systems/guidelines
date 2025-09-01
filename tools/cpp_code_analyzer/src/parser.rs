@@ -410,6 +410,8 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
         |"case"|"break_statement"|"default" => (),
       "sizeof_expression" => (),
       x if is_literal(x) => (),
+      "type_descriptor" => (),
+      "field_identifier" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("extract_statement: {}", child.to_sexp())),
         range: child.byte_range(),
