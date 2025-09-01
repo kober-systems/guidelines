@@ -64,7 +64,7 @@ long f2(float param1);
 #[test]
 fn parse_function_definitions() {
     let code = r#"
-int global_function(int param1, unsigned char param2) {
+int global_function(int param1, unsigned char param2, vector<uint16_t>& param3) {
   if (true || true != false && ~1 == '\n') {
     return 42 * 1;
   } else {

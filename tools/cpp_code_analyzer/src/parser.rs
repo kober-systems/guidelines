@@ -493,6 +493,31 @@ fn extract_call_expression(node: &Node, code: &str) -> Vec<AST> {
   children
 }
 
+fn extract_template_type(node: &Node, code: &str) -> Vec<AST> {
+  let mut dependencies = vec![];
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      "type_identifier" => dependencies.push(AST {
+        name: code[range.start..range.end].to_string(),
+        kind: Kind::Reference(Reference::TypeRead),
+        ..AST::default()
+      }),
+      "template_argument_list" => dependencies.append(&mut extract_template_arguments(&child, code)),
+      "type_qualifier" => (),
+      _ => dependencies.push(AST {
+        kind: Kind::Unhandled(format!("extract_template_type: {}", child.to_sexp())),
+        range: child.byte_range(),
+        ..AST::default()
+      }),
+    }
+  }
+
+  dependencies
+}
+
 fn extract_template_arguments(node: &Node, code: &str) -> Vec<AST> {
   let mut dependencies = vec![];
 
@@ -633,6 +658,7 @@ fn extract_param(node: &Node, code: &str) -> Vec<AST> {
         kind: Kind::Reference(Reference::TypeRead),
         ..AST::default()
       }),
+      "template_type" => dependencies.append(&mut extract_template_type(&child, code)),
       "type_qualifier" => (),
       "=" => (),
       x if is_literal(x) => (),
