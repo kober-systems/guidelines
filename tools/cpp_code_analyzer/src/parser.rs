@@ -838,7 +838,7 @@ fn get_class_name(node: &Node, code: &str) -> String {
 
 fn get_variable_name(node: &Node, code: &str) -> String {
   match node.kind() {
-    "identifier"|"field_identifier" => {
+    "identifier"|"field_identifier"|"qualified_identifier" => {
       let range = node.byte_range();
       return code[range.start..range.end].to_string()
     },
@@ -847,7 +847,7 @@ fn get_variable_name(node: &Node, code: &str) -> String {
       for idx in 0..node.child_count() {
         let child = node.child(idx).unwrap();
         match child.kind() {
-          "identifier"|"field_identifier"
+          "identifier"|"field_identifier"|"qualified_identifier"
             |"array_declarator"|"pointer_declarator" => {
             return get_variable_name(&child, code)
           },
