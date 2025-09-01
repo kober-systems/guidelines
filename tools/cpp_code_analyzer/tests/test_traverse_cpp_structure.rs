@@ -80,6 +80,8 @@ int global_function(int param1, unsigned char param2) {
     "is a concatenated"
     "string");
 
+  size_t from_template = static_cast<size_t>(x);
+
   // comments should be ignored
   for (int i=0; i<42; i++) {
     2+40;

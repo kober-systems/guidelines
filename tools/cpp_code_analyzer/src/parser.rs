@@ -475,6 +475,8 @@ fn extract_call_expression(node: &Node, code: &str) -> Vec<AST> {
         range,
         ..AST::default()
       } ),
+      "template_function" => children.append(&mut extract_call_expression(&child, code)),
+      "template_argument_list" => children.append(&mut extract_template_arguments(&child, code)),
       "argument_list" => children.append(&mut extract_arguments(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "("|")"|"{"|"}"|";" => (),
@@ -487,6 +489,34 @@ fn extract_call_expression(node: &Node, code: &str) -> Vec<AST> {
   }
 
   children
+}
+
+fn extract_template_arguments(node: &Node, code: &str) -> Vec<AST> {
+  let mut dependencies = vec![];
+
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+    let range = child.byte_range();
+    match child.kind() {
+      x if is_primitive_type(x) => (),
+      "type_descriptor" => dependencies.append(&mut extract_template_arguments(&child, code)),
+      "type_identifier"|"struct_specifier"
+        |"function_declarator" => dependencies.push(AST {
+        name: code[range.start..range.end].to_string(),
+        kind: Kind::Reference(Reference::TypeRead),
+        ..AST::default()
+      }),
+      "type_qualifier" => (),
+      "<"|">"|"("|")"|"{"|"}"|"," => (),
+      _ => dependencies.push(AST {
+        kind: Kind::Unhandled(format!("extract_template_arguments: {}", child.to_sexp())),
+        range: child.byte_range(),
+        ..AST::default()
+      }),
+    }
+  }
+
+  dependencies
 }
 
 fn extract_field_expression(node: &Node, code: &str) -> Vec<AST> {
