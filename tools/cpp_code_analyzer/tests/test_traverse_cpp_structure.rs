@@ -73,7 +73,7 @@ int global_function(int param1, unsigned char param2, vector<uint16_t>& param3) 
 
   MyClass myclass(&param1);
 
-  int x = namespace1::fn();
+  int& x = namespace1::fn();
 
   other_fn(
     "this"
