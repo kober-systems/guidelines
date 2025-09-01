@@ -533,7 +533,7 @@ fn extract_template_arguments(node: &Node, code: &str) -> Vec<AST> {
         kind: Kind::Reference(Reference::TypeRead),
         ..AST::default()
       }),
-      "type_qualifier" => (),
+      "type_qualifier"|"abstract_pointer_declarator" => (),
       "<"|">"|"("|")"|"{"|"}"|"," => (),
       _ => dependencies.push(AST {
         kind: Kind::Unhandled(format!("extract_template_arguments: {}", child.to_sexp())),
