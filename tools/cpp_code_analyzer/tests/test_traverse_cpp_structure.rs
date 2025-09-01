@@ -55,7 +55,7 @@ fn parse_global_functions() {
     let code = r#"
 int global_function(int param1, long param2);
 
-long f2(float param1);
+long f2(float param1, std::string& string_p);
 "#;
     let errors = analyze_cpp(code);
     assert_eq!(errors, Vec::<String>::new());

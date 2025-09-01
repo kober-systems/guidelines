@@ -652,7 +652,7 @@ fn extract_param(node: &Node, code: &str) -> Vec<AST> {
         name = get_variable_name(&child, code);
       }
       x if is_primitive_type(x) => (),
-      "type_identifier"|"struct_specifier"
+      "type_identifier"|"struct_specifier"|"qualified_identifier"
         |"function_declarator" => dependencies.push(AST {
         name: code[range.start..range.end].to_string(),
         kind: Kind::Reference(Reference::TypeRead),
