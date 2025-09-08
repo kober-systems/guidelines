@@ -36,6 +36,7 @@ enum OutputType {
 }
 
 fn main() -> io::Result<()> {
+    env_logger::init();
     let args = Args::parse();
 
     let entries = get_sources_from_dir(&args.input)?;
