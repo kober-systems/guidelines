@@ -1,0 +1,68 @@
+Styleguide for Python Projects
+==============================
+
+image::../img/status-draft.svg[]
+
+== Version
+Version:: v0.1.0
+Status:: Draft
+Date:: 2025-09-09
+
+This guideline is created according to the
+https://kober-systems.github.io/guidelines/published/guidelines_standard_v0-1-0.html["Guidelines
+Standard" v0.1.0].
+
+== Overview
+Best Practices to organize and structure code in python projects.
+
+=== Goals
+Help python projects to be well maintainable. Using the same structure
+and rules also eases onboarding when someone sees a codebase for the
+first time.
+
+== Requirements
+
+=== Isolation
+
+[[isolation_avoid_global_variables]]
+==== Don't use global variables
+The code MUST NOT define nor use any global variables.
+
+An exception to this are modules that are only used directly as scripts
+and not imported from any other modules. There you MAY use global
+variables.
+
+===== Why?
+The usage of global variables creates invisible coupling between
+otherwise unconnected parts of the code. The more it is used the more
+unmaintainable becomes a codebase.
+
+However if the whole codebase is only one file. The is less of a problem
+with invisibility because it's easy to keep everthing about the program
+in mind (hence the exception).
+
+=== Cognitive Load
+Many challanges in programming are connected with cognitive load. Once
+we have to keep to many things in mind to solve a problem we loose the
+ability to maintain the code. Thats why keeping things simple, often
+means keeping things small.
+
+[[order_functions_by_call_hierachy]]
+==== Order functions by the tree hierarchy of the call tree
+Modules SHOULD order the functions by their importance.
+This normally means that the functions used by other
+modules come first. The other functions SHOULD be ordered
+by the call hierarchy. Normally the call hierarchy forms a
+https://en.wikipedia.org/wiki/Directed_acyclic_graph[DAG] so the
+functions can be ordered with topological sort.
+
+===== Why?
+When someone reads a module he is interested in what the module does
+from a high level perspective. By ordering this way the reader goes
+from high level to detail. She can stop at any moment and still have
+a full picture of what everything before was about. In the end it
+helps understanding a module without worrying about the implementation
+details.
+
+== Possible Problems
+
