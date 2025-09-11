@@ -90,7 +90,7 @@ public:
 "#;
     let errors = analyze_cpp(code);
     assert_eq!(errors, [
-      "Abstract class 'AbstractMyClass' should not provide an init function. Initialisation should be done in constructor."
+      "Class 'AbstractMyClass' should not provide an init function. Initialisation should be done in constructor."
     ]);
 }
 

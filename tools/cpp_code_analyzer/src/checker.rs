@@ -286,7 +286,7 @@ fn prohibit_init_function(field: &AST, class_name: &str, code: &TextFile) -> Vec
 
   if field.name.contains("init") {
     errors.push(LintError {
-      message: format!("Abstract class '{class_name}' should not provide an init function. Initialisation should be done in constructor."),
+      message: format!("Class '{class_name}' should not provide an init function. Initialisation should be done in constructor."),
       range: field.range.clone(),
       file_path: code.file_path.clone(),
     });
