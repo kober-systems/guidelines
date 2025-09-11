@@ -30,7 +30,7 @@ pub fn apply_fixes(fixes: Vec<Fix>, files: SourceFiles) -> SourceFiles {
         let interface_ast = AST::default().set_file_content(interface_content);
         files.tree.insert(interface_path, interface_ast);
 
-        let content = modify_to_derive_from_interface(&content, &class_name);
+        let content = modify_to_derive_from_interface(class, &content);
         files.tree.insert(path, ast.set_file_content(content));
       }
     }
@@ -67,11 +67,11 @@ fn create_interface_content(class: &AST, context_content: &str) -> String {
   content
 }
 
-fn modify_to_derive_from_interface(content: &str, class_name: &str) -> String {
+fn modify_to_derive_from_interface(class: &AST, content: &str) -> String {
   let (before, after) = content.split_once("class ").expect("pattern `class` not found");
   let (_, after) = get_classname(after);
   let content = before.to_string() + "class "
-    + class_name + ": public Abstract" + class_name
+    + &class.name + ": public Abstract" + &class.name
     + " " + after;
   content
 }
