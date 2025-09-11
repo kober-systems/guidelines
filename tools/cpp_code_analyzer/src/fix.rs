@@ -25,28 +25,7 @@ pub fn apply_fixes(fixes: Vec<Fix>, files: SourceFiles) -> SourceFiles {
 
         let idx = ast.children.iter().position(|element| element.name == class_name).expect("Not found");
         let class = &ast.children[idx];
-        let mut interface_content = "\nclass Abstract".to_string() + &class_name;
-        interface_content += " {\npublic:\n";
-        interface_content += &format!("  virtual ~Abstract{class_name}() = default;\n\n");
-        for child in class.children.iter() {
-          match &child.kind {
-            crate::ast::Kind::Function(fun) => {
-              if fun.visibility == "public" && child.name != class_name {
-                let function_sig = &content[child.range.start..child.range.end];
-                let function_sig = match function_sig.rsplit_once(";") {
-                  Some((function_sig, _)) => function_sig,
-                  None => function_sig,
-                };
-                interface_content += &format!("  virtual {function_sig} = 0;\n");
-              }
-            }
-            _ => (),
-          }
-        }
-        if !interface_content.ends_with("\n") {
-          interface_content += "\n";
-        }
-        interface_content += "}\n";
+        let interface_content = create_interface_content(class, &content);
         let interface_path = path.replace(&class_name, &format!("Abstract{class_name}"));
         let interface_ast = AST::default().set_file_content(interface_content);
         files.tree.insert(interface_path, interface_ast);
@@ -60,6 +39,32 @@ pub fn apply_fixes(fixes: Vec<Fix>, files: SourceFiles) -> SourceFiles {
   files.tree.into_iter()
     .map(|(path, ast)| (path, ast.get_file_content().expect("needs to be a file")))
     .collect()
+}
+
+fn create_interface_content(class: &AST, context_content: &str) -> String {
+  let mut content = "\nclass Abstract".to_string() + &class.name;
+  content += " {\npublic:\n";
+  content += &format!("  virtual ~Abstract{}() = default;\n\n", class.name);
+  for child in class.children.iter() {
+    match &child.kind {
+      crate::ast::Kind::Function(fun) => {
+        if fun.visibility == "public" && child.name != class.name {
+          let function_sig = &context_content[child.range.start..child.range.end];
+          let function_sig = match function_sig.rsplit_once(";") {
+            Some((function_sig, _)) => function_sig,
+            None => function_sig,
+          };
+          content += &format!("  virtual {function_sig} = 0;\n");
+        }
+      }
+      _ => (),
+    }
+  }
+  if !content.ends_with("\n") {
+    content += "\n";
+  }
+  content += "}\n";
+  content
 }
 
 fn modify_to_derive_from_interface(content: &str, class_name: &str) -> String {
