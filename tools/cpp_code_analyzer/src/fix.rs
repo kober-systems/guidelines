@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{ast::{LintError, AST}, parser::parse_cpp_chunc};
+use crate::{ast::{LintError, AST, Kind}, parser::parse_cpp_chunc};
 
 pub struct Fix {
   pub instruction: FixInstruction,
@@ -47,7 +47,7 @@ fn create_interface_content(class: &AST, context_content: &str) -> String {
   content += &format!("  virtual ~Abstract{}() = default;\n\n", class.name);
   for child in class.children.iter() {
     match &child.kind {
-      crate::ast::Kind::Function(fun) => {
+      Kind::Function(fun) => {
         if fun.visibility == "public" && child.name != class.name {
           let function_sig = &context_content[child.range.start..child.range.end];
           let function_sig = match function_sig.rsplit_once(";") {
