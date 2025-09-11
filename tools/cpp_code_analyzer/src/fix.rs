@@ -51,18 +51,8 @@ pub fn apply_fixes(fixes: Vec<Fix>, files: SourceFiles) -> SourceFiles {
         let interface_ast = AST::default().set_file_content(interface_content);
         files.tree.insert(interface_path, interface_ast);
 
-        match content.split_once("class ") {
-          Some((before, after)) => {
-            let (_, after) = get_classname(after);
-            let content = before.to_string() + "class "
-              + &class_name + ": public Abstract" + &class_name
-              + " " + after;
-            files.tree.insert(path, ast.set_file_content(content));
-          }
-          None => {
-            // TODO error pattern not found
-          }
-        }
+        let content = modify_to_derive_from_interface(&content, &class_name);
+        files.tree.insert(path, ast.set_file_content(content));
       }
     }
   }
@@ -70,6 +60,15 @@ pub fn apply_fixes(fixes: Vec<Fix>, files: SourceFiles) -> SourceFiles {
   files.tree.into_iter()
     .map(|(path, ast)| (path, ast.get_file_content().expect("needs to be a file")))
     .collect()
+}
+
+fn modify_to_derive_from_interface(content: &str, class_name: &str) -> String {
+  let (before, after) = content.split_once("class ").expect("pattern `class` not found");
+  let (_, after) = get_classname(after);
+  let content = before.to_string() + "class "
+    + class_name + ": public Abstract" + class_name
+    + " " + after;
+  content
 }
 
 fn get_classname(input: &str) -> (&str, &str) {
