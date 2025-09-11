@@ -60,6 +60,26 @@ pub struct LintInstruction {
   pub reason: String,
 }
 
+impl AST {
+  pub fn get_file_content(&self) -> Result<String, String> {
+    match &self.kind {
+      Kind::File { content } => Ok(content.clone()),
+      _ => Err(format!("{:?} is not a file", self)),
+    }
+  }
+
+  pub fn set_file_content(self, content: String) -> Self {
+    Self {
+      name: self.name,
+      kind: Kind::File { content },
+      dependencies: self.dependencies,
+      children: self.children,
+      instructions: self.instructions,
+      range: self.range,
+    }
+  }
+}
+
 impl Default for AST {
   fn default() -> Self {
     Self {
