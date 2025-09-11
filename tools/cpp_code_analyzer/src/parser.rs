@@ -89,30 +89,7 @@ fn extract_class(cl: &Node, code: &str) -> AST {
   let mut children = vec![];
   let mut instructions = vec![];
 
-  if let Some(before) = cl.prev_sibling() {
-    if before.kind() == "comment" {
-      let range = before.byte_range();
-      let previous_comment = &code[range.start..range.end];
-      let mut next_is_instruction = false;
-      const LINT_PATTERN: &str = "lint: ignore ";
-      for instruction in previous_comment.split_inclusive(LINT_PATTERN) {
-        if next_is_instruction {
-          match instruction.split_once(" ") {
-            Some((number, reason)) => instructions.push(LintInstruction {
-              ident: number.to_string(),
-              reason: reason.to_string(),
-            }),
-            None => children.push(AST {
-              kind: Kind::LintError(format!("could not parse lint instruction in comment: {previous_comment}")) ,
-              range: range.clone(),
-              ..AST::default()
-            })
-          }
-        }
-        next_is_instruction = instruction.ends_with(LINT_PATTERN);
-      }
-    }
-  }
+  find_lint_instructions(cl, code, &mut instructions, &mut children);
 
   for idx in 0..cl.child_count() {
     let child = cl.child(idx).unwrap();
@@ -144,6 +121,33 @@ fn extract_class(cl: &Node, code: &str) -> AST {
     dependencies,
     range: cl.byte_range(),
     instructions,
+  }
+}
+
+fn find_lint_instructions(node: &Node, code: &str, instructions: &mut Vec<LintInstruction>, children: &mut Vec<AST>) {
+  if let Some(before) = node.prev_sibling() {
+    if before.kind() == "comment" {
+      let range = before.byte_range();
+      let previous_comment = &code[range.start..range.end];
+      let mut next_is_instruction = false;
+      const LINT_PATTERN: &str = "lint: ignore ";
+      for instruction in previous_comment.split_inclusive(LINT_PATTERN) {
+        if next_is_instruction {
+          match instruction.split_once(" ") {
+            Some((number, reason)) => instructions.push(LintInstruction {
+              ident: number.to_string(),
+              reason: reason.to_string(),
+            }),
+            None => children.push(AST {
+              kind: Kind::LintError(format!("could not parse lint instruction in comment: {previous_comment}")) ,
+              range: range.clone(),
+              ..AST::default()
+            })
+          }
+        }
+        next_is_instruction = instruction.ends_with(LINT_PATTERN);
+      }
+    }
   }
 }
 
