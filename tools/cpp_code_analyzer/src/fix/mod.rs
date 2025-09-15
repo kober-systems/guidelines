@@ -2,6 +2,9 @@ use std::collections::HashMap;
 
 use crate::{ast::{LintError, AST, Kind}, parser::parse_cpp_chunc};
 
+mod derive_interface;
+use derive_interface::modify_to_derive_from_interface;
+
 pub struct Fix {
   pub instruction: FixInstruction,
   pub main_lint_err: LintError,
@@ -65,19 +68,6 @@ fn create_interface_content(class: &AST, context_content: &str) -> String {
   }
   content += "}\n";
   content
-}
-
-fn modify_to_derive_from_interface(class: &AST, content: &str) -> String {
-  let (before, after) = content.split_once("class ").expect("pattern `class` not found");
-  let (_, after) = get_classname(after);
-  let content = before.to_string() + "class "
-    + &class.name + ": public Abstract" + &class.name
-    + " " + after;
-  content
-}
-
-fn get_classname(input: &str) -> (&str, &str) {
-  input.split_once(" ").expect("should work")
 }
 
 type SourceFiles = HashMap<String, String>;
