@@ -1,4 +1,4 @@
-use crate::ast::{Class, Function, Kind, LintInstruction, Reference, Variable, AST};
+use crate::ast::{Class, Function, Kind, LintInstruction, LintErrorTypes, Reference, Variable, AST};
 use tree_sitter::{Node, Parser};
 
 pub fn parse_cpp_chunc(name: &str, input: &str) -> AST {
@@ -139,7 +139,7 @@ fn find_lint_instructions(node: &Node, code: &str, instructions: &mut Vec<LintIn
               reason: reason.to_string(),
             }),
             None => children.push(AST {
-              kind: Kind::LintError(format!("could not parse lint instruction in comment: {previous_comment}")) ,
+              kind: Kind::LintError(LintErrorTypes::LintInstructionNotParseble(previous_comment.to_string())),
               range: range.clone(),
               ..AST::default()
             })
@@ -200,7 +200,7 @@ fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<AST>, Ve
       }),
       "access_specifier" => if &code[range.start..range.end] != "public" {
         errors.push(AST {
-          kind: Kind::LintError(format!("Class '{class_name}': Derives must always be public")),
+          kind: Kind::LintError(LintErrorTypes::CppDerivesAlwaysPublic(class_name.to_string())),
           range: child.byte_range(),
           ..AST::default()
         });

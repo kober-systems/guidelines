@@ -73,7 +73,7 @@ fn print_all_errors(ast: Vec<AST>, fix_interactive: bool) {
   for error in errors.iter() {
     let file_id = mapping.get(&error.file_path).unwrap_or(&0);
     let diagnostic = Diagnostic::error()
-        .with_message(&error.message)
+        .with_message(&format!("{}", error.kind))
         .with_labels(vec![
             Label::primary(*file_id, error.range.start..error.range.end),
         ]);

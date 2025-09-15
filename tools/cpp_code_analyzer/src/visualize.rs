@@ -358,7 +358,7 @@ fn get_text_width(text: &str) -> f64 {
 
 fn is_problematic(node: &AST) -> Vec<String> {
   node.children.iter().filter_map(|n| match &n.kind {
-    Kind::LintError(msg) => Some(msg.clone()),
+    Kind::LintError(err) => Some(format!("{err}")),
     _ => None,
   }).collect()
 }

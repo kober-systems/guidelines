@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use core::ops::Range;
-use cpp_code_analyzer::{ast::LintError, fix::{apply_fixes, Fix, FixInstruction}};
+use cpp_code_analyzer::{ast::{LintError, LintErrorTypes}, fix::{apply_fixes, Fix, FixInstruction}};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -11,7 +11,7 @@ fn apply_change_derive_class() {
   let sources = apply_fixes(vec![Fix {
     instruction: FixInstruction::CreateAbstractClass("MyClass".to_string()),
     main_lint_err: LintError {
-      message: "".to_string(),
+      kind: LintErrorTypes::DeriveFromAbstractInterface("MyClass".to_string()),
       range: Range { start: 0, end: 30 },
       file_path: "MyClass.h".to_string(),
     },

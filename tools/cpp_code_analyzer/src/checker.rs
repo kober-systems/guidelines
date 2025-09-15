@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::ast::{AST, Kind, Function, LintError, Reference};
+use crate::ast::{AST, Kind, Function, LintError, LintErrorTypes, Reference};
 
 pub fn check_global_codechunk(ast: Vec<AST>) -> Vec<LintError> {
   let vars = get_scope(&ast);
@@ -123,14 +123,14 @@ fn check_abstract_class(node: &AST, class_name: &str, code: &TextFile) -> Vec<Li
       Kind::Variable(vl) => {
         if vl.visibility != "public" {
           errors.push(LintError {
-            message: format!("Abstract class `{class_name}` should ONLY define 'public' methods (not allowed {})", vl.visibility),
+            kind: LintErrorTypes::InterfaceOnlyPublicMethods(class_name.to_string(), vl.visibility.clone()),
             range: child.range.clone(),
             file_path: code.file_path.clone(),
           });
         }
         if !vl.is_const {
           errors.push(LintError {
-            message: format!("Abstract class `{class_name}` must not have attributes ('{}')", child.name),
+            kind: LintErrorTypes::InterfaceShouldNotDefineAttrs(class_name.to_string(), child.name.clone()),
             range: child.range.clone(),
             file_path: code.file_path.clone(),
           });
@@ -144,7 +144,7 @@ fn check_abstract_class(node: &AST, class_name: &str, code: &TextFile) -> Vec<Li
       },
       Kind::Type|Kind::Reference(_)|Kind::LintError(_) => (),
       Kind::Unhandled(element) => errors.push(LintError {
-        message: element.clone(),
+        kind: LintErrorTypes::ParserUnhandled(element.clone()),
         range: child.range.clone(),
         file_path: code.file_path.clone(),
       }),
@@ -154,7 +154,7 @@ fn check_abstract_class(node: &AST, class_name: &str, code: &TextFile) -> Vec<Li
 
   if !has_default_destructor {
     errors.push(LintError {
-      message: format!("Abstract class '{class_name}' should provide a default destructor."),
+      kind: LintErrorTypes::CppAbstractClassMissingDefaultDestructor(class_name.to_string()),
       range: node.range.clone(),
       file_path: code.file_path.clone(),
     });
@@ -172,7 +172,7 @@ fn check_derived_class(node: AST, class_name: &str, code: &TextFile, vars: &InSc
       Kind::Variable(vl) => {
         if vl.visibility != "private" && node.instructions.iter().find(|inst| inst.ident == "E_MODULES_DERIVED_CLASSES_ALL_ATTRS_PRIVATE").iter().count() == 0 {
           errors.push(LintError {
-            message: format!("Derived class '{class_name}' must not have non private attributes ('{}')", child.name),
+            kind: LintErrorTypes::DerivedClassesAllAttrsPrivate(class_name.to_string(), child.name.clone()),
             range: child.range.clone(),
             file_path: code.file_path.clone(),
           });
@@ -190,7 +190,7 @@ fn check_derived_class(node: AST, class_name: &str, code: &TextFile, vars: &InSc
       Kind::LintError(_) => child,
       Kind::Unhandled(element) => {
         errors.push(LintError {
-          message: element.clone(),
+          kind: LintErrorTypes::ParserUnhandled(element.clone()),
           range: child.range.clone(),
           file_path: code.file_path.clone(),
         });
@@ -203,7 +203,7 @@ fn check_derived_class(node: AST, class_name: &str, code: &TextFile, vars: &InSc
 
   for err in errors.into_iter() {
     node.children.push(AST {
-      kind: Kind::LintError(err.message),
+      kind: Kind::LintError(err.kind),
       range: err.range,
       ..AST::default()
     });
@@ -218,7 +218,7 @@ fn check_derives(class: &AST, code: &TextFile) -> Vec<LintError> {
   for derived_from in class.dependencies.iter() {
     if !derived_from.name.starts_with("Abstract") {
       errors.push(LintError {
-        message: format!("Class '{class_name}': Derives must always be from abstract interfaces"),
+        kind: LintErrorTypes::CppDerivesAlwaysFromAbstractInterfaces(class_name.to_string()),
         range: class.range.clone(),
         file_path: code.file_path.clone(),
       });
@@ -237,7 +237,7 @@ fn check_function_is_virtual(field: &AST, fun: &Function, class_name: &str, code
   if !fun.is_virtual {
     if !function_code.starts_with("virtual") {
       errors.push(LintError {
-        message: format!("method '{function_code}' in abstract class '{class_name}' must be virtual"),
+        kind: LintErrorTypes::CppAbstractClassMethodNotVirtual(class_name.to_string(), function_code.clone()),
         range: field.range.clone(),
         file_path: code.file_path.clone(),
       });
@@ -245,7 +245,7 @@ fn check_function_is_virtual(field: &AST, fun: &Function, class_name: &str, code
 
     if !function_code.replace(" ", "").ends_with("=0;") {
       errors.push(LintError {
-        message: format!("Abstract class '{class_name}': missing `= 0;` for method '{function_code}'"),
+        kind: LintErrorTypes::CppAbstractClassMethodMissingVirtualEnding(class_name.to_string(), function_code),
         range: field.range.clone(),
         file_path: code.file_path.clone(),
       });
@@ -261,7 +261,7 @@ fn check_function_is_not_virtual(field: &AST, fun: &Function, class_name: &str, 
   if !fun.is_virtual {
     if field.name.starts_with("virtual") {
       errors.push(LintError {
-        message: format!("Derived class `{class_name}` must not define virtual functions ('{}')", field.name),
+        kind: LintErrorTypes::CppDerivedClassMethodIsVirtual(class_name.to_string(), field.name.clone()),
         range: field.range.clone(),
         file_path: code.file_path.clone(),
       });
@@ -269,7 +269,7 @@ fn check_function_is_not_virtual(field: &AST, fun: &Function, class_name: &str, 
 
     if field.name.replace(" ", "").ends_with("=0;") {
       errors.push(LintError {
-        message: format!("Derived class '{class_name}' method '{}' should not be pure virtual", field.name),
+        kind: LintErrorTypes::CppDerivedClassMethodHasVirtualEnding(class_name.to_string(), field.name.clone()),
         range: field.range.clone(),
         file_path: code.file_path.clone(),
       });
@@ -286,7 +286,7 @@ fn prohibit_init_function(field: &AST, class_name: &str, code: &TextFile) -> Vec
 
   if field.name.contains("init") {
     errors.push(LintError {
-      message: format!("Class '{class_name}' should not provide an init function. Initialisation should be done in constructor."),
+      kind: LintErrorTypes::AvoidInitMethods(class_name.to_string()),
       range: field.range.clone(),
       file_path: code.file_path.clone(),
     });
@@ -315,8 +315,13 @@ fn error_message_from_ast(input: AST, code: &TextFile, vars: &InScope) -> Vec<Li
 fn get_lint_errors_for_node(input: &AST, code: &TextFile, vars: &InScope) -> Vec<LintError> {
   let mut errors = vec![];
   match &input.kind {
-    Kind::Unhandled(element)|Kind::LintError(element) => errors.push(LintError {
-      message: element.clone(),
+    Kind::LintError(err) => errors.push(LintError {
+      kind: err.clone(),
+      range: input.range.clone(),
+      file_path: code.file_path.clone(),
+    }),
+    Kind::Unhandled(element) => errors.push(LintError {
+      kind: LintErrorTypes::ParserUnhandled(element.clone()),
       range: input.range.clone(),
       file_path: code.file_path.clone(),
     }),
@@ -341,7 +346,7 @@ fn add_lint_errors_for_node(node: AST, code: &TextFile, vars: &InScope, has_main
         node = check_derived_class(node, &name, code, vars);
         if node.dependencies.len() == 0 {
           errors.push(LintError {
-            message: format!("Class '{name}' should be derived from abstract interface"),
+            kind: LintErrorTypes::DeriveFromAbstractInterface(name.to_string()),
             range: node.range.clone(),
             file_path: code.file_path.clone(),
           });
@@ -363,14 +368,14 @@ fn add_lint_errors_for_node(node: AST, code: &TextFile, vars: &InScope, has_main
     Kind::Variable(var) => {
       if !var.is_const && !has_main_entrypoint {
         errors.push(LintError {
-          message: format!("It's not allowed to create global variables ('{}'). Global variables create invisible coupling.", node.name),
+          kind: LintErrorTypes::GlobalVariablesDeclaration(node.name.clone()),
           range: node.range.clone(),
           file_path: code.file_path.clone(),
         });
       };
     }
     Kind::Unhandled(element) => errors.push(LintError {
-      message: element.clone(),
+      kind: LintErrorTypes::ParserUnhandled(element.clone()),
       range: node.range.clone(),
       file_path: code.file_path.clone(),
     }),
@@ -379,7 +384,7 @@ fn add_lint_errors_for_node(node: AST, code: &TextFile, vars: &InScope, has_main
 
   for err in errors.into_iter() {
     node.children.push(AST {
-      kind: Kind::LintError(err.message),
+      kind: Kind::LintError(err.kind),
       range: err.range,
       ..AST::default()
     });
@@ -402,7 +407,7 @@ where
         match ref_kind {
           Read|Write => if !vars_in_scope.contains(&node.name) && !in_scope(&node.name) && !has_main_entrypoint {
             node.children.push(AST {
-              kind: Kind::LintError(format!("It's not allowed to use global variables ('{}'). Global variables create invisible coupling.", node.name)),
+              kind: Kind::LintError(LintErrorTypes::GlobalVariablesUsage(node.name.clone())),
               range: node.range.clone(),
               ..AST::default()
             });
@@ -414,7 +419,7 @@ where
       Kind::Variable(_var) => node,
       Kind::Unhandled(element) => {
         errors.push(LintError {
-          message: element.clone(),
+          kind: LintErrorTypes::ParserUnhandled(element.clone()),
           range: node.range.clone(),
           file_path: code.file_path.clone(),
         });
@@ -426,7 +431,7 @@ where
 
   for err in errors.into_iter() {
     input.children.push(AST {
-      kind: Kind::LintError(err.message),
+      kind: Kind::LintError(err.kind),
       range: err.range,
       ..AST::default()
     });

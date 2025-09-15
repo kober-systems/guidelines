@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, PartialEq)]
 pub struct AST {
   pub name: String,
@@ -17,7 +19,7 @@ pub enum Kind {
   Reference(Reference),
   Type,
   Unhandled(String),
-  LintError(String),
+  LintError(LintErrorTypes),
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -49,9 +51,88 @@ pub enum  Reference {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct LintError {
-  pub message: String,
+  pub kind: LintErrorTypes,
   pub range: core::ops::Range<usize>,
   pub file_path: String,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum LintErrorTypes {
+  InterfaceOnlyPublicMethods(String, String),
+  InterfaceShouldNotDefineAttrs(String, String),
+  DerivedClassesAllAttrsPrivate(String, String),
+  GlobalVariablesUsage(String),
+  GlobalVariablesDeclaration(String),
+  DeriveFromAbstractInterface(String),
+  AvoidInitMethods(String),
+  ParserUnhandled(String),
+  LintInstructionNotParseble(String),
+  // c++ specific errors without broader meaning
+  // for other languages
+  CppAbstractClassMissingDefaultDestructor(String),
+  CppAbstractClassMethodNotVirtual(String, String),
+  CppAbstractClassMethodMissingVirtualEnding(String, String),
+  CppDerivedClassMethodIsVirtual(String, String),
+  CppDerivedClassMethodHasVirtualEnding(String, String),
+  CppDerivesAlwaysPublic(String),
+  CppDerivesAlwaysFromAbstractInterfaces(String),
+}
+
+impl Display for LintErrorTypes {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    use LintErrorTypes::*;
+
+    match &self {
+      InterfaceOnlyPublicMethods(class_name, visibility) => {
+        write!(f, "Abstract class `{class_name}` should ONLY define 'public' methods (not allowed {visibility})")
+      },
+      InterfaceShouldNotDefineAttrs(class_name, attr_name) => {
+        write!(f, "Abstract class `{class_name}` must not have attributes ('{attr_name}')")
+      },
+      DerivedClassesAllAttrsPrivate(class_name, attr_name) => {
+        write!(f, "Derived class '{class_name}' must not have non private attributes ('{attr_name}')")
+      },
+      GlobalVariablesDeclaration(name) => {
+        write!(f, "It's not allowed to create global variables ('{name}'). Global variables create invisible coupling.")
+      },
+      GlobalVariablesUsage(name) => {
+        write!(f, "It's not allowed to use global variables ('{name}'). Global variables create invisible coupling.")
+      },
+      DeriveFromAbstractInterface(name) => {
+        write!(f, "Class '{name}' should be derived from abstract interface")
+      },
+      AvoidInitMethods(name) => {
+        write!(f, "Class '{name}' should not provide an init function. Initialisation should be done in constructor.")
+      },
+      CppAbstractClassMissingDefaultDestructor(class_name) => {
+        write!(f, "Abstract class '{class_name}' should provide a default destructor.")
+      },
+      CppAbstractClassMethodNotVirtual(class_name, function_code) => {
+        write!(f, "method '{function_code}' in abstract class '{class_name}' must be virtual")
+      },
+      CppAbstractClassMethodMissingVirtualEnding(class_name, function_code) => {
+        write!(f, "Abstract class '{class_name}': missing `= 0;` for method '{function_code}'")
+      },
+      CppDerivedClassMethodIsVirtual(class_name, function_name) => {
+        write!(f, "Derived class `{class_name}` must not define virtual functions ('{function_name}')")
+      },
+      CppDerivedClassMethodHasVirtualEnding(class_name, function_name) => {
+        write!(f, "Derived class '{class_name}' method '{function_name}' should not be pure virtual")
+      },
+      CppDerivesAlwaysPublic(class_name) => {
+        write!(f, "Class '{class_name}': Derives must always be public")
+      },
+      CppDerivesAlwaysFromAbstractInterfaces(class_name) => {
+        write!(f, "Class '{class_name}': Derives must always be from abstract interfaces")
+      },
+      LintInstructionNotParseble(comment) => {
+        write!(f, "could not parse lint instruction in comment: {comment}")
+      },
+      ParserUnhandled(message) => {
+        write!(f, "{message}")
+      },
+    }
+  }
 }
 
 #[derive(Debug, PartialEq)]
