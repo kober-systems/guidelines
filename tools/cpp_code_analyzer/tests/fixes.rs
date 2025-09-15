@@ -33,14 +33,15 @@ public:
 };
 ";
 
-const DERIVED_CLASS: &str = r"
+const DERIVED_CLASS: &str = r#"#include "AbstractMyClass.h"
+
 class MyClass: public AbstractMyClass {
 public:
   MyClass();
 
   void foo();
 };
-";
+"#;
 
 const ABSTRACT_INTERFACE: &str = r"
 class AbstractMyClass {

@@ -16,6 +16,9 @@ pub fn modify_to_derive_from_interface(class: &AST, content: &str) -> String {
 
   let mut content = content.to_string();
   content.insert_str(pos + offset, &format!(": public Abstract{}", class.name));
+
+  let pos = find_include_position(&tree.root_node());
+  content.insert_str(pos, &(format!(r#"#include "Abstract{}.h""#, class.name) + "\n"));
   content
 }
 
@@ -39,3 +42,19 @@ fn find_derive_position(node: &Node) -> usize {
   pos
 }
 
+fn find_include_position(node: &Node) -> usize {
+  for idx in 0..node.child_count() {
+    let child = node.child(idx).unwrap();
+
+    match child.kind() {
+      "preproc_ifdef"|"preproc_def" => {
+        // header guard
+        return find_include_position(&child);
+      }
+      _ => {
+        return child.byte_range().start;
+      }
+    }
+  }
+  return 0;
+}
