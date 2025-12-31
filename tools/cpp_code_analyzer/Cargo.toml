@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.5.40", features = ["derive"] }
 codespan-reporting = "0.13"
-tree-sitter = "0.25"
+tree-sitter = "0.26"
 tree-sitter-cpp = "0.23"
 layout-rs = "0.1"
 log = "0.4"
