@@ -848,7 +848,7 @@ fn get_variable_name(node: &Node, code: &str) -> String {
     },
     "array_declarator"|"enumerator"|"pointer_declarator"
       |"reference_declarator" => {
-      for idx in 0..node.child_count() {
+      for idx in 0..node.child_count() as u32 {
         let child = node.child(idx).unwrap();
         match child.kind() {
           "identifier"|"field_identifier"|"qualified_identifier"
