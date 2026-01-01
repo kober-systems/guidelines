@@ -20,7 +20,7 @@ pub fn parse_cpp_chunc(name: &str, input: &str) -> AST {
 }
 
 fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
-  for idx in 0..cl.child_count() {
+  for idx in 0..cl.child_count() as u32 {
     let child = cl.child(idx).unwrap();
     match child.kind() {
       "class_specifier" => base.children.push(extract_class(&child, code)),
@@ -57,7 +57,7 @@ fn parse_include(node: &Node, code: &str) -> AST {
   let mut children = vec![];
   let mut name = "";
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     match child.kind() {
       "string_literal"|"system_lib_string" => {
@@ -91,7 +91,7 @@ fn extract_class(cl: &Node, code: &str) -> AST {
 
   find_lint_instructions(cl, code, &mut instructions, &mut children);
 
-  for idx in 0..cl.child_count() {
+  for idx in 0..cl.child_count() as u32 {
     let child = cl.child(idx).unwrap();
     match child.kind() {
       "field_declaration_list" => {
@@ -155,7 +155,7 @@ fn extract_class_fields(fields: &Node, code: &str) -> Vec<AST> {
   let mut children = vec![];
 
   let mut access_specifier = "public";
-  for idx in 0..fields.child_count() {
+  for idx in 0..fields.child_count() as u32 {
     let child = fields.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -182,7 +182,7 @@ fn extract_derives(fields: &Node, code: &str, class_name: &str) -> (Vec<AST>, Ve
   let mut derived_from = vec![];
   let mut errors = vec![];
 
-  for idx in 0..fields.child_count() {
+  for idx in 0..fields.child_count() as u32 {
     let child = fields.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -235,7 +235,7 @@ fn is_default_destructor(node: &Node) -> bool {
   let mut is_destructor = false;
   let mut is_default = false;
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     match child.kind() {
       "function_declarator" => is_destructor = check_is_destructor(&child),
@@ -248,7 +248,7 @@ fn is_default_destructor(node: &Node) -> bool {
 }
 
 fn check_is_destructor(node: &Node) -> bool {
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     match child.kind() {
       "destructor_name" => return true,
@@ -262,7 +262,7 @@ fn check_is_destructor(node: &Node) -> bool {
 fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<AST> {
   let mut children = vec![];
 
-  for idx in 0..field.child_count() {
+  for idx in 0..field.child_count() as u32 {
     let child = field.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -349,7 +349,7 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
   let mut dependencies = vec![];
   let mut children = vec![];
 
-  for idx in 0..field.child_count() {
+  for idx in 0..field.child_count() as u32 {
     let child = field.child(idx).unwrap();
     match child.kind() {
       x if is_primitive_type(x) => dependencies.push(AST {
@@ -392,7 +392,7 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
 fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
   let mut children = vec![];
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -430,7 +430,7 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
 fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
   let mut children = vec![];
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -471,7 +471,7 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
 fn extract_call_expression(node: &Node, code: &str) -> Vec<AST> {
   let mut children = vec![];
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -500,7 +500,7 @@ fn extract_call_expression(node: &Node, code: &str) -> Vec<AST> {
 fn extract_template_type(node: &Node, code: &str) -> Vec<AST> {
   let mut dependencies = vec![];
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -525,7 +525,7 @@ fn extract_template_type(node: &Node, code: &str) -> Vec<AST> {
 fn extract_template_arguments(node: &Node, code: &str) -> Vec<AST> {
   let mut dependencies = vec![];
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -553,7 +553,7 @@ fn extract_template_arguments(node: &Node, code: &str) -> Vec<AST> {
 fn extract_field_expression(node: &Node, code: &str) -> Vec<AST> {
   let mut children = vec![];
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -582,7 +582,7 @@ fn extract_field_expression(node: &Node, code: &str) -> Vec<AST> {
 fn extract_parameters(node: &Node, code: &str) -> Vec<AST> {
   let mut children = vec![];
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     match child.kind() {
       "parameter_declaration"|"optional_parameter_declaration" => children.append(&mut extract_param(&child, code)),
@@ -606,7 +606,7 @@ fn extract_parameters(node: &Node, code: &str) -> Vec<AST> {
 fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
   let mut children = vec![];
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -647,7 +647,7 @@ fn extract_param(node: &Node, code: &str) -> Vec<AST> {
   let mut children = vec![];
   let mut name = "".to_string();
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -693,7 +693,7 @@ fn parse_enum(node: &Node, code: &str) -> Vec<AST> {
   let mut children = vec![];
   let mut name = "";
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -722,7 +722,7 @@ fn parse_enum(node: &Node, code: &str) -> Vec<AST> {
 fn parse_enum_variant(node: &Node, code: &str, namespace: &str) -> Vec<AST> {
   let mut children = vec![];
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -765,7 +765,7 @@ fn parse_struct(node: &Node, code: &str) -> AST {
   let mut children = vec![];
   let mut name = "";
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     match child.kind() {
       "type_identifier" => {
@@ -795,7 +795,7 @@ fn parse_alias(node: &Node, code: &str) -> AST {
   let mut children = vec![];
   let mut name = "";
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     match child.kind() {
       "type_identifier" => {
@@ -821,7 +821,7 @@ fn parse_alias(node: &Node, code: &str) -> AST {
 }
 
 fn get_class_name(node: &Node, code: &str) -> String {
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -848,7 +848,7 @@ fn get_variable_name(node: &Node, code: &str) -> String {
     },
     "array_declarator"|"enumerator"|"pointer_declarator"
       |"reference_declarator" => {
-      for idx in 0..node.child_count() {
+      for idx in 0..node.child_count() as u32 {
         let child = node.child(idx).unwrap();
         match child.kind() {
           "identifier"|"field_identifier"|"qualified_identifier"
@@ -871,7 +871,7 @@ fn get_variable_name(node: &Node, code: &str) -> String {
 fn get_function_name(node: &Node, code: &str) -> (String, Option<String>) {
   let mut namespace = None;
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
@@ -896,7 +896,7 @@ fn get_function_name(node: &Node, code: &str) -> (String, Option<String>) {
 }
 
 fn check_is_const(node: &Node, code: &str) -> bool {
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
