@@ -25,7 +25,7 @@ pub fn modify_to_derive_from_interface(class: &AST, content: &str) -> String {
 fn find_derive_position(node: &Node) -> usize {
   let mut pos = 0;
 
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
 
     match child.kind() {
@@ -43,7 +43,7 @@ fn find_derive_position(node: &Node) -> usize {
 }
 
 fn find_include_position(node: &Node) -> usize {
-  for idx in 0..node.child_count() {
+  for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
 
     match child.kind() {
