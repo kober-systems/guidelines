@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::{fs, io};
-use std::path::{Path, PathBuf};
+use std::io;
+use std::path::PathBuf;
 
 use clap::{Parser, ValueEnum};
 use codespan_reporting::diagnostic::{Diagnostic, Label};
@@ -9,7 +9,7 @@ use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use codespan_reporting::term;
 use cpp_code_analyzer::ast::{Kind, AST};
 use cpp_code_analyzer::visualize::{to_graphml, to_graphviz, visualize};
-use cpp_code_analyzer::{checker, parser};
+use cpp_code_analyzer::{checker, input};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -39,7 +39,7 @@ fn main() -> io::Result<()> {
     env_logger::init();
     let args = Args::parse();
 
-    let entries = get_sources_from_dir(&args.input)?;
+    let entries = input::get_sources(&args.input)?;
 
     use  OutputType::*;
     match args.format {
@@ -100,33 +100,3 @@ fn to_dot(ast: Vec<AST>) {
   println!("{}", to_graphviz(ast, ""));
 }
 
-fn get_sources_from_dir(dir: &Path) -> io::Result<Vec<AST>> {
-  let mut entries = vec![];
-  if dir.is_dir() {
-    for entry in fs::read_dir(dir)? {
-      let entry = entry?;
-      let path = entry.path();
-      if path.is_dir() {
-          if !is_path_hidden(&path)  {
-            entries.append(&mut get_sources_from_dir(&path)?);
-          }
-      } else {
-        let filepath = path.to_string_lossy().to_string();
-        if filepath.ends_with(".h") || filepath.ends_with(".cpp") {
-          let input = std::fs::read_to_string(&path)?;
-          entries.push(parser::parse_cpp_chunc(&filepath, &input));
-        }
-      }
-    }
-  } else {
-    let filepath = dir.to_string_lossy().to_string();
-    let input = std::fs::read_to_string(&dir)?;
-    entries.push(parser::parse_cpp_chunc(&filepath, &input));
-  }
-
-  Ok(entries)
-}
-
-fn is_path_hidden(path: &Path) -> bool {
-  path.file_name().unwrap().to_string_lossy().starts_with(".")
-}

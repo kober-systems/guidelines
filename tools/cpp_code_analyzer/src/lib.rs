@@ -3,6 +3,7 @@ pub mod checker;
 pub mod ast;
 pub mod visualize;
 pub mod fix;
+pub mod input;
 
 pub fn analyze_cpp(input: &str) -> Vec<String> {
   lints_to_strings(analyze_cpp_errors("", input))

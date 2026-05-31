@@ -169,6 +169,8 @@ dependencies = [
  "layout-rs",
  "log",
  "pretty_assertions",
+ "serde",
+ "serde_json",
  "tree-sitter",
  "tree-sitter-cpp",
 ]
@@ -478,7 +480,7 @@ checksum = "ebc4ee7f67670e9b64d05fa4253e753e016c6c95ff35b89b7941d6b856dec1d5"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn",
+ "syn 2.0.117",
 ]
 
 [[package]]
