@@ -245,6 +245,7 @@ implementation details have not been abstracted sufficiently.
 Since they allow many more combinations than concrete functions with an
 action, they enable misuse of the API much more easily.
 
+[[E_MOD_07]]
 ==== Data structures should be passed by value, not by reference
 If you use data structures in a class and they can be queried or set,
 these MUST be passed by value and MUST NOT be passed by reference.
@@ -256,6 +257,7 @@ respective class and can manipulate them without using the API. This
 creates many invisible dependencies and makes it impossible to validate
 manipulations.
 
+[[E_MOD_08]]
 ==== Structures and enums should be defined in abstract classes
 If an abstract class uses data structures and/or enums that belong to
 the context of the abstract class footnote:[Structures or enums belong
@@ -371,6 +373,7 @@ in the namespaces, making compilation easier. Additionally, the
 names are shorter, which contributes to better readability and
 understandability of the source code.
 
+[[E_MOD_09]]
 ==== Don't use global variables
 The code MUST NOT define nor use any global variables.
 
@@ -385,6 +388,7 @@ unmaintainable becomes a codebase.
 
 === Bit Rot
 
+[[E_BITROT_01]]
 ==== Aviod conditional compilation when possible
 Conditional compilation SHOULD NOT be used inside of classes or
 functions. Instead code should be written in a platform agnostic way.
