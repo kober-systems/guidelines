@@ -1,60 +1,61 @@
-use tree_sitter::{Node, Parser};
+use ast_grep_core::{
+  language::Language,
+  matcher::{KindMatcher, PatternBuilder, PatternError},
+  tree_sitter::{LanguageExt, StrDoc, TSLanguage},
+  Pattern,
+};
 use crate::ast::AST;
 
+#[derive(Clone)]
+struct CppLang;
+
+impl Language for CppLang {
+  fn kind_to_id(&self, kind: &str) -> u16 {
+    let ts_lang: TSLanguage = tree_sitter_cpp::LANGUAGE.into();
+    ts_lang.id_for_node_kind(kind, true)
+  }
+
+  fn field_to_id(&self, field: &str) -> Option<u16> {
+    self.get_ts_language()
+      .field_id_for_name(field)
+      .map(|f| f.get())
+  }
+
+  fn build_pattern(&self, builder: &PatternBuilder) -> Result<Pattern, PatternError> {
+    builder.build(|src| StrDoc::try_new(src, self.clone()))
+  }
+}
+
+impl LanguageExt for CppLang {
+  fn get_ts_language(&self) -> TSLanguage {
+    tree_sitter_cpp::LANGUAGE.into()
+  }
+}
+
 pub fn modify_to_derive_from_interface(class: &AST, content: &str) -> String {
-  let mut parser = Parser::new();
-  parser.set_language(&tree_sitter_cpp::LANGUAGE.into()).expect("Error loading Cpp grammar");
+  let chunk = &content[class.range.start..class.range.end];
+  let root = CppLang.ast_grep(chunk);
 
-  let offset = class.range.start;
-  let tree = parser.parse(&content[offset..class.range.end], None).unwrap();
-  let node = tree.root_node().child(0).unwrap();
-  if node.kind() != "class_specifier" {
-    return format!("Something is wrong {}", node.kind());
-  }
+  let mut edits: Vec<(usize, String)> = vec![];
 
-  let pos = find_derive_position(&node);
-
-  let mut content = content.to_string();
-  content.insert_str(pos + offset, &format!(": public Abstract{}", class.name));
-
-  let pos = find_include_position(&tree.root_node());
-  content.insert_str(pos, &(format!(r#"#include "Abstract{}.h""#, class.name) + "\n"));
-  content
-}
-
-fn find_derive_position(node: &Node) -> usize {
-  let mut pos = 0;
-
-  for idx in 0..node.child_count() as u32 {
-    let child = node.child(idx).unwrap();
-
-    match child.kind() {
-      "type_identifier" => {
-        pos = child.byte_range().end;
-      }
-      "body" => {
-        break;
-      }
-      _ => ()
+  // Find class name end position to insert ": public AbstractXxx"
+  let class_spec = root.root().find(KindMatcher::new("class_specifier", CppLang));
+  if let Some(cs) = class_spec {
+    if let Some(name_node) = cs.find(KindMatcher::new("type_identifier", CppLang)) {
+      let insert_pos = class.range.start + name_node.range().end;
+      edits.push((insert_pos, format!(": public Abstract{}", class.name)));
     }
   }
 
-  pos
-}
+  // Insert include at start of file
+  edits.push((0, format!("#include \"Abstract{}.h\"\n", class.name)));
 
-fn find_include_position(node: &Node) -> usize {
-  for idx in 0..node.child_count() as u32 {
-    let child = node.child(idx).unwrap();
-
-    match child.kind() {
-      "preproc_ifdef"|"preproc_def" => {
-        // header guard
-        return find_include_position(&child);
-      }
-      _ => {
-        return child.byte_range().start;
-      }
-    }
+  // Apply edits from end to start so earlier byte offsets stay valid
+  let mut result = content.to_string();
+  edits.sort_by_key(|e| e.0);
+  for (pos, text) in edits.into_iter().rev() {
+    result.insert_str(pos, &text);
   }
-  return 0;
+
+  result
 }
