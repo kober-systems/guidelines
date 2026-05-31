@@ -2,8 +2,11 @@ use std::collections::HashMap;
 
 use crate::{ast::{LintError, AST, Kind}, parser::parse_cpp_chunc};
 
+mod cpp_lang;
 mod derive_interface;
+mod remove_global;
 use derive_interface::modify_to_derive_from_interface;
+use remove_global::remove_global_variable;
 
 pub struct Fix {
   pub instruction: FixInstruction,
@@ -22,8 +25,12 @@ pub fn apply_fixes(fixes: Vec<Fix>, files: SourceFiles) -> SourceFiles {
     use FixInstruction::*;
 
     match fix.instruction {
-      RemoveGlobalVariable(_name) => {
-        todo!("RemoveGlobalVariable not yet implemented")
+      RemoveGlobalVariable(var_name) => {
+        let path = fix.main_lint_err.file_path.clone();
+        let ast = files.tree.remove(&path).expect(&format!("{path} not found"));
+        let content = ast.get_file_content().expect("needs to be a file");
+        let new_content = remove_global_variable(&var_name, &content);
+        files.tree.insert(path, ast.set_file_content(new_content));
       }
       CreateAbstractClass(class_name) => {
         let path = fix.main_lint_err.file_path.clone();
