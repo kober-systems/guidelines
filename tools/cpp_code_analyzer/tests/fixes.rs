@@ -106,6 +106,56 @@ fn apply_change_skips_private_methods() {
   ]));
 }
 
+fn make_remove_fix(var_name: &str, file_path: &str, range_end: usize) -> Fix {
+  Fix {
+    instruction: FixInstruction::RemoveGlobalVariable(var_name.to_string()),
+    main_lint_err: LintError {
+      kind: LintErrorTypes::GlobalVariablesDeclaration(var_name.to_string()),
+      range: Range { start: 0, end: range_end },
+      file_path: file_path.to_string(),
+    },
+    affected_lint_errors: vec![],
+  }
+}
+
+#[test]
+fn remove_unused_global_variable() {
+  let mut sources: HashMap<String, String> = HashMap::default();
+  sources.insert("a.cpp".to_string(), UNUSED_GLOBAL.to_string());
+
+  let sources = apply_fixes(vec![make_remove_fix("unused", "a.cpp", 11)], sources);
+
+  assert_eq!(sources, HashMap::from([
+    ("a.cpp".to_string(), UNUSED_GLOBAL_REMOVED.to_string()),
+  ]));
+}
+
+#[test]
+fn remove_write_only_global_variable() {
+  // Variable is only written to, never read — should still be removed.
+  let mut sources: HashMap<String, String> = HashMap::default();
+  sources.insert("b.cpp".to_string(), WRITE_ONLY_GLOBAL.to_string());
+
+  let sources = apply_fixes(vec![make_remove_fix("flag", "b.cpp", 9)], sources);
+
+  assert_eq!(sources, HashMap::from([
+    ("b.cpp".to_string(), WRITE_ONLY_GLOBAL_REMOVED.to_string()),
+  ]));
+}
+
+#[test]
+fn remove_global_variable_keeps_others() {
+  // Only the targeted variable is removed; other globals remain untouched.
+  let mut sources: HashMap<String, String> = HashMap::default();
+  sources.insert("c.cpp".to_string(), TWO_GLOBALS.to_string());
+
+  let sources = apply_fixes(vec![make_remove_fix("to_remove", "c.cpp", 14)], sources);
+
+  assert_eq!(sources, HashMap::from([
+    ("c.cpp".to_string(), TWO_GLOBALS_ONE_REMOVED.to_string()),
+  ]));
+}
+
 // ── fixtures ─────────────────────────────────────────────────────────────────
 
 const MINIMAL_CLASS: &str = r"
@@ -300,3 +350,12 @@ public:
   virtual void run() = 0;
 }
 ";
+
+const UNUSED_GLOBAL: &str = "int unused;\n\nvoid foo() {}\n";
+const UNUSED_GLOBAL_REMOVED: &str = "\nvoid foo() {}\n";
+
+const WRITE_ONLY_GLOBAL: &str = "int flag;\n\nvoid set_flag() {\n  flag = 1;\n}\n";
+const WRITE_ONLY_GLOBAL_REMOVED: &str = "\nvoid set_flag() {\n  flag = 1;\n}\n";
+
+const TWO_GLOBALS: &str = "int to_remove;\nint to_keep;\n\nvoid use_kept() {\n  to_keep = 1;\n}\n";
+const TWO_GLOBALS_ONE_REMOVED: &str = "int to_keep;\n\nvoid use_kept() {\n  to_keep = 1;\n}\n";

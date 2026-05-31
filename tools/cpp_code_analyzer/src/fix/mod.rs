@@ -13,6 +13,7 @@ pub struct Fix {
 
 pub enum FixInstruction {
   CreateAbstractClass(String),
+  RemoveGlobalVariable(String),
 }
 
 pub fn apply_fixes(fixes: Vec<Fix>, files: SourceFiles) -> SourceFiles {
@@ -21,6 +22,9 @@ pub fn apply_fixes(fixes: Vec<Fix>, files: SourceFiles) -> SourceFiles {
     use FixInstruction::*;
 
     match fix.instruction {
+      RemoveGlobalVariable(_name) => {
+        todo!("RemoveGlobalVariable not yet implemented")
+      }
       CreateAbstractClass(class_name) => {
         let path = fix.main_lint_err.file_path.clone();
         let ast = files.tree.remove(&path).expect(&format!("{path} not found"));
