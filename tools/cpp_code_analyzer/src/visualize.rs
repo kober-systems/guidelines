@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, HashSet};
 
 use crate::ast::{Kind, Reference, AST};
 
+use ascii_dag::{Direction, Graph, LayoutConfig, RenderOptions};
 use layout::adt::dag::NodeHandle;
 use layout::backends::svg::SVGWriter;
 use layout::core::base::Orientation;
@@ -54,6 +55,36 @@ pub fn visualize(ast: Vec<AST>, code: &str) -> String {
   vg.do_it(false, false, true, &mut svg);
 
   svg.finalize()
+}
+
+pub fn to_ascii(ast: Vec<AST>, code: &str) -> String {
+  let ast = crate::checker::filter_references_in_scope(ast);
+  let ast = crate::checker::add_lint_errors(ast);
+  let g = remove_visual_noise(ast_to_graph(ast, code));
+
+  if g.nodes.is_empty() {
+    return String::new();
+  }
+
+  let labels: Vec<_> = g.nodes.values()
+      .map(|node| format!("({}) {}", node.kind, node.name))
+      .collect();
+  let node_ids: BTreeMap<_, _> = g.nodes.keys()
+      .enumerate()
+      .map(|(index, name)| (name, index + 1))
+      .collect();
+
+  let mut graph = Graph::new();
+  for (id, label) in labels.iter().enumerate() {
+    graph.add_node(id + 1, label.as_str());
+  }
+  for connection in &g.connections {
+    graph.add_edge(node_ids[&connection.from], node_ids[&connection.to], None);
+  }
+
+  let mut config = LayoutConfig::standard();
+  config.direction = Direction::LeftRight;
+  graph.compute_layout_with_config(&config).render_string(&RenderOptions::plain())
 }
 
 pub fn to_graphviz(ast: Vec<AST>, code: &str) -> String {

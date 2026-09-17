@@ -62,6 +62,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ascii-dag"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c4b39df9b298a34bc644332c381bc3740e2eb95ff755b6c5318bbd86f5a4c536"
+
+[[package]]
 name = "ast-grep-core"
 version = "0.50.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -199,6 +205,7 @@ checksum = "b05b61dc5112cbb17e4b6cd61790d9845d13888356391624cbe7e41efeac1e75"
 name = "cpp_code_analyzer"
 version = "0.1.0"
 dependencies = [
+ "ascii-dag",
  "ast-grep-core",
  "clap",
  "codespan-reporting",

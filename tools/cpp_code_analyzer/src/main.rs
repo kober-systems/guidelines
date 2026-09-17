@@ -8,7 +8,7 @@ use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use codespan_reporting::term;
 use cpp_code_analyzer::ast::{Kind, AST};
-use cpp_code_analyzer::visualize::{to_graphml, to_graphviz, visualize};
+use cpp_code_analyzer::visualize::{to_ascii, to_graphml, to_graphviz, visualize};
 use cpp_code_analyzer::{checker, input};
 
 #[derive(Parser)]
@@ -29,6 +29,9 @@ struct Args {
 enum OutputType {
   /// Print out on the terminal
   Terminal,
+  /// Text graph rendered on the console
+  Ascii,
+  /// Scalable Vector Graphics
   Svg,
   /// Graphviz dot format
   Dot,
@@ -44,6 +47,7 @@ fn main() -> io::Result<()> {
     use  OutputType::*;
     match args.format {
       Terminal => print_all_errors(entries, args.interactive),
+      Ascii => println!("{}", to_ascii(entries, "")),
       Svg => to_svg(entries),
       Dot => to_dot(entries),
       Graphml => {

@@ -1,7 +1,29 @@
 use cpp_code_analyzer::{checker, parser, visualize};
-use cpp_code_analyzer::visualize::{Connection, ConnectionType, Entity, GraphData};
+use cpp_code_analyzer::visualize::{to_ascii, Connection, ConnectionType, Entity, GraphData};
 use pretty_assertions::assert_eq;
 use std::collections::BTreeMap;
+
+#[test]
+fn renders_graph_as_terminal_text() {
+  let code = r#"
+class AbstractInterface {
+public:
+  virtual ~AbstractInterface() = default;
+  virtual void foo() = 0;
+};
+
+class Derived: public AbstractInterface {
+  void foo() {}
+};
+"#;
+
+  let ast = vec![parser::parse_cpp_chunc("sample.cpp", code)];
+  let output = to_ascii(ast, code);
+
+  assert!(output.contains("(C) Derived"));
+  assert!(output.contains("(A) AbstractInterface"));
+  assert!(output.contains('→'));
+}
 
 #[test]
 fn basic_derives() {
