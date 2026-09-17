@@ -5,10 +5,10 @@
         "homepage": "https://github.com/nmattia/niv",
         "owner": "nmattia",
         "repo": "niv",
-        "rev": "e9519949d2b39bc9574b10f6ba216d65f014874e",
-        "sha256": "1mv379lsy030k2kh7000xwxxz4rzqk416yvmccsgsqnczs06r678",
+        "rev": "1ad9d90fea53b0e794cdbabf5515b39e539bc148",
+        "sha256": "1abhp43jpr8iaixyflr86zzj8ps0v8xzax301ilsvp07w3h23dwz",
         "type": "tarball",
-        "url": "https://github.com/nmattia/niv/archive/e9519949d2b39bc9574b10f6ba216d65f014874e.tar.gz",
+        "url": "https://github.com/nmattia/niv/archive/1ad9d90fea53b0e794cdbabf5515b39e539bc148.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
@@ -17,10 +17,10 @@
         "homepage": "",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "88cef159e47c0dc56f151593e044453a39a6e547",
-        "sha256": "08fvmcbgyilcwdz22cqnfcic2mvxdqq6nlg3l8a9gj2qp724v24i",
+        "rev": "c7def046b9a883d46974757852106483d741586f",
+        "sha256": "0vplppav4izj2462i00a3vd0nbvaj6dbp4m582ndfhhnf8688579",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/88cef159e47c0dc56f151593e044453a39a6e547.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/c7def046b9a883d46974757852106483d741586f.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "rust-overlay": {
@@ -29,10 +29,10 @@
         "homepage": "https://github.com/oxalica/rust-overlay",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "8ec04f46f1edeeed3f870da62191745b93975da7",
-        "sha256": "0z04zcr08p9b9lbf350gpivii5s88vcy92rwdk63kma7l0ysnpjb",
+        "rev": "a1d497a9415999853809ba22a7959b1c36dc6554",
+        "sha256": "1cqfhvfr2xicxkbqg534ghycazad57ag30kq7p9m0hb7sdg5rsc6",
         "type": "tarball",
-        "url": "https://github.com/oxalica/rust-overlay/archive/8ec04f46f1edeeed3f870da62191745b93975da7.tar.gz",
+        "url": "https://github.com/oxalica/rust-overlay/archive/a1d497a9415999853809ba22a7959b1c36dc6554.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
