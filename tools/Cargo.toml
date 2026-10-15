@@ -4,3 +4,8 @@ members = [
   "ravioli_core",
   "cpp_code_analyzer",
 ]
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+
+pretty_assertions = "1"
