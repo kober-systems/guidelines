@@ -213,6 +213,7 @@ dependencies = [
  "layout-rs",
  "log",
  "pretty_assertions",
+ "ravioli-core",
  "serde",
  "serde_json",
  "tree-sitter",
@@ -404,6 +405,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "41f2619966050689382d2b44f664f4bc593e129785a36d6ee376ddf37259b924"
 dependencies = [
  "proc-macro2",
+]
+
+[[package]]
+name = "ravioli-core"
+version = "0.1.0"
+dependencies = [
+ "ascii-dag",
+ "ast-grep-core",
+ "clap",
+ "codespan-reporting",
+ "env_logger",
+ "layout-rs",
+ "log",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tree-sitter",
+ "tree-sitter-cpp",
 ]
 
 [[package]]

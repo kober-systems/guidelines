@@ -181,6 +181,16 @@ pub fn to_graphml(ast: Vec<AST>, code: &str) -> String {
   for con in g.connections.iter() {
     out.push_str(&format!("    <edge source=\"{}\" target=\"{}\">\n", con.from, con.to));
     out.push_str(&format!("      <data key=\"is_problematic\">{}</data>\n", !con.problematic.is_empty()));
+    //match con.kind {
+    //  ConnectionType::Composition => {
+    //    out.push_str("arrowhead=diamond;");
+    //  }
+    //  ConnectionType::Usage => {
+    //    out.push_str("style=dashed;");
+    //  }
+    //  ConnectionType::Inheritance => ()
+    //}
+    //out.push_str("]\n");
     out.push_str("    </edge>\n");
   }
 
@@ -325,14 +335,29 @@ fn extract_references(input: &AST, from: &str, code: &str, base: GraphData) -> G
       base
     },
     Kind::Function(_) => {
+      //eprintln!("children of function: {:?}", input.children);
       for child in input.children.iter() {
         base = extract_references(child, from, code, base);
       }
       base
     },
     Kind::Unhandled(_element) => base,
-    Kind::Variable(_) => base,
-    Kind::LintError(_) => base,
+    Kind::Variable(_) => {
+      //for dependecy in input.dependencies.iter() {
+      //  let dep_name = dependecy.name.to_string();
+      //  if !base.nodes.contains_key(&dep_name) {
+      //    base = extract_node(dependecy, code, base);
+      //  }
+      //  base.connections.push(Connection {
+      //    kind: ConnectionType::Composition,
+      //    from: input.name.clone(),
+      //    to: dep_name,
+      //    problematic: vec![],
+      //  });
+      //}
+      base
+    }
+    Kind::LintError(_) => base, // TODO change is_problematic
     _ => todo!("{:?}", input.kind)
   }
 }
@@ -390,6 +415,7 @@ fn get_text_width(text: &str) -> f64 {
 fn is_problematic(node: &AST) -> Vec<String> {
   node.children.iter().filter_map(|n| match &n.kind {
     Kind::LintError(err) => Some(format!("{err}")),
+    //Kind::Unhandled(_) => true,
     _ => None,
   }).collect()
 }

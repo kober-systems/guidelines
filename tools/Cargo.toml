@@ -1,5 +1,6 @@
 [workspace]
 resolver = "2"
 members = [
+  "ravioli_core",
   "cpp_code_analyzer",
 ]

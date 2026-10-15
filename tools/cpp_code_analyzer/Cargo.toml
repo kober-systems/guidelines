@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+ravioli-core = { path = "../ravioli_core" }
 clap = { version = "4.5.40", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

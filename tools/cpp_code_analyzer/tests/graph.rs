@@ -1,5 +1,6 @@
-use cpp_code_analyzer::{checker, parser, visualize};
-use cpp_code_analyzer::visualize::{to_ascii, Connection, ConnectionType, Entity, GraphData};
+use cpp_code_analyzer::parser;
+use ravioli_core::{checker, visualize};
+use ravioli_core::visualize::{to_ascii, Connection, ConnectionType, Entity, GraphData};
 use pretty_assertions::assert_eq;
 use std::collections::BTreeMap;
 

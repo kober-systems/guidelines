@@ -1,4 +1,4 @@
-use crate::ast::{Class, Function, Kind, LintInstruction, LintErrorTypes, Reference, Variable, AST};
+use ravioli_core::ast::{Class, Function, Kind, LintInstruction, LintErrorTypes, Reference, Variable, AST};
 use tree_sitter::{Node, Parser};
 
 pub fn parse_cpp_chunc(name: &str, input: &str) -> AST {

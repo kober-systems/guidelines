@@ -8,8 +8,8 @@ use codespan_reporting::files::SimpleFiles;
 use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use codespan_reporting::term;
 use cpp_code_analyzer::ast::{Kind, AST};
-use cpp_code_analyzer::visualize::{to_ascii, to_graphml, to_graphviz, visualize};
-use cpp_code_analyzer::{checker, input};
+use cpp_code_analyzer::input;
+use ravioli_core::visualize::{to_ascii, to_graphml, to_graphviz, visualize};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -68,7 +68,7 @@ fn print_all_errors(ast: Vec<AST>, fix_interactive: bool) {
     }
   }
 
-  let errors = checker::check_global_codechunk(ast);
+  let errors = ravioli_core::checker::check_global_codechunk(ast);
 
   let writer = StandardStream::stderr(ColorChoice::Always);
   let config = codespan_reporting::term::Config::default();
