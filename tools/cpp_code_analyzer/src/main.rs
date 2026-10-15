@@ -9,7 +9,7 @@ use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
 use codespan_reporting::term;
 use cpp_code_analyzer::ast::{Kind, AST};
 use cpp_code_analyzer::input;
-use ravioli_core::visualize::{to_ascii, to_graphml, to_graphviz, visualize};
+use ravioli_core::visualize;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -47,12 +47,10 @@ fn main() -> io::Result<()> {
     use  OutputType::*;
     match args.format {
       Terminal => print_all_errors(entries, args.interactive),
-      Ascii => println!("{}", to_ascii(entries, "")),
-      Svg => to_svg(entries),
-      Dot => to_dot(entries),
-      Graphml => {
-        println!("{}", to_graphml(entries, ""));
-      }
+      Ascii => println!("{}", visualize::to_ascii(entries, "")),
+      Svg => println!("{}", visualize::visualize(entries, "")),
+      Dot => println!("{}", visualize::to_graphviz(entries, "")),
+      Graphml => println!("{}", visualize::to_graphml(entries, "")),
     }
     Ok(())
 }
@@ -94,13 +92,5 @@ fn print_all_errors(ast: Vec<AST>, fix_interactive: bool) {
   }
 
   println!("found {} errors", errors.len());
-}
-
-fn to_svg(ast: Vec<AST>) {
-  println!("{}", visualize(ast, ""));
-}
-
-fn to_dot(ast: Vec<AST>) {
-  println!("{}", to_graphviz(ast, ""));
 }
 
