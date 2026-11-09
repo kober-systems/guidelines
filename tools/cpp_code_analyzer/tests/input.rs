@@ -52,6 +52,18 @@ fn returns_multiple_files_in_stable_order() {
 // ── get_sources ──────────────────────────────────────────────────────────────
 
 #[test]
+fn get_sources_reads_platformio_cli_task_tracker_fixture() {
+  let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli_task_tracker");
+
+  let mut sources = get_sources(&fixture).unwrap();
+  sources.sort_by(|left, right| left.name.cmp(&right.name));
+
+  assert_eq!(sources.len(), 6);
+  assert!(sources.iter().any(|source| source.name.ends_with("src/main.cpp")));
+  assert!(sources.iter().any(|source| source.name.ends_with("test/test_task_storage/test_main.cpp")));
+}
+
+#[test]
 fn get_sources_reads_files_from_compile_commands() {
   let dir = tempdir();
   let cpp_path = dir.join("sensor.cpp");
