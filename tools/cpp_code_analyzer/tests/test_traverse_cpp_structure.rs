@@ -196,3 +196,77 @@ using my_alias = MyClass::my_inner_enum;
     assert_eq!(errors, Vec::<String>::new());
 }
 
+#[test]
+fn parse_classes_with_members_and_method_definitions() {
+    let code = r#"
+#pragma once
+
+class Task: public AbstractTask {
+ public:
+  Task(int id, std::string title) : id_(id), title_(std::move(title)) {}
+
+  int id() const { return id_; }
+  const std::string& title() const { return title_; }
+  bool completed() const { return completed_; }
+
+ private:
+  int id_;
+  std::string title_;
+  bool completed_ = false;
+};
+
+class AbstractTaskRepository {
+ public:
+  virtual ~AbstractTaskRepository() = default;
+  virtual std::vector<Task> all() const = 0;
+  virtual bool complete(int id) = 0;
+};
+
+class TaskStorage : public AbstractTaskRepository {
+ public:
+  std::vector<Task> all() const override;
+  bool complete(int id) override;
+
+ private:
+  std::vector<Task> tasks_;
+};
+
+bool TaskStorage::complete(int id) {
+  for (Task& task : tasks_) {
+    if (task.id() == id) {
+      task.complete();
+      return true;
+    }
+  }
+  return false;
+}
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+
+#[test]
+fn parse_chained_calls_range_for_loops_and_conditional_expressions() {
+    let code = r#"
+int main(int argc, char* argv[]) {
+  std::cout << task_storage.add(argv[2]).id();
+
+  for (const Task& task : task_storage.all()) {
+    std::cout << task.id() << (task.completed() ? 'x' : ' ') << task.title();
+  }
+
+  for (Task& task : tasks_) {
+    if (task.id() == id) {
+      task.complete();
+      return true;
+    }
+  }
+
+  TEST_ASSERT_TRUE(storage.all().front().completed());
+  return false;
+}
+"#;
+    let errors = analyze_cpp(code);
+    assert_eq!(errors, Vec::<String>::new());
+}
+

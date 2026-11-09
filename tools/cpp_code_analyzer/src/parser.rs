@@ -28,6 +28,7 @@ fn parse_global_codechunk(base: &mut AST, cl: &Node, code: &str) {
       "preproc_ifdef"|"preproc_def"|"namespace_definition"
         |"declaration_list"|"preproc_if"|"preproc_elif"
         |"preproc_else"|"binary_expression"|"unary_expression" => parse_global_codechunk(base, &child, code),
+      "preproc_call" => (),
       "preproc_include" => base.dependencies.push(parse_include(&child, code)),
       "identifier"|"namespace_identifier" => (), // ignoring identifiers on global level
       "template_declaration" => parse_global_codechunk(base, &child, code),
@@ -261,13 +262,16 @@ fn check_is_destructor(node: &Node) -> bool {
 
 fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<AST> {
   let mut children = vec![];
+  let is_function_declaration = (0..field.child_count() as u32)
+    .filter_map(|idx| field.child(idx))
+    .any(|child| child.kind() == "function_declarator");
 
   for idx in 0..field.child_count() as u32 {
     let child = field.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
       "identifier"|"array_declarator"|"field_identifier"
-        |"qualified_identifier"|"reference_declarator" => {
+        |"reference_declarator" => {
         children.push(AST {
           name: get_variable_name(&child, code),
           kind: Kind::Variable(Variable {
@@ -278,6 +282,18 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
           ..AST::default()
         });
       }
+      "qualified_identifier" if !is_function_declaration => {
+        children.push(AST {
+          name: get_variable_name(&child, code),
+          kind: Kind::Variable(Variable {
+            visibility: access_specifier.to_string(),
+            is_const: check_is_const(&field.parent().unwrap(), code),
+          }),
+          range,
+          ..AST::default()
+        });
+      }
+      "qualified_identifier" => (),
       "init_declarator" => {
         children.append(&mut extract_declaration(&child, code, access_specifier));
       },
@@ -358,10 +374,11 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
         ..AST::default()
       }),
       "function_declarator" => children.append(&mut extract_parameters(&child, code)),
-      "type_identifier"|";"|"comment" => (),
+      "type_identifier"|"qualified_identifier"|";"|"comment" => (),
       "compound_statement" => children.append(&mut extract_statement(&child, code)),
+      "field_initializer_list" => (),
       "template_type" => (),
-      "pointer_declarator" => (),
+      "pointer_declarator"|"reference_declarator" => children.append(&mut extract_parameters(&child, code)),
       x if is_literal(x) => (),
       "=" => (),
       "initializer_list" => (),
@@ -407,11 +424,21 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "declaration" => children.append(&mut extract_declaration(&child, code, "public")),
+      "reference_declarator" => children.push(AST {
+        name: get_variable_name(&child, code),
+        kind: Kind::Variable(Variable {
+          is_const: false,
+          visibility: "public".to_string(),
+        }),
+        range,
+        ..AST::default()
+      }),
       "("|")"|"{"|"}"|";"|"["|"]"|":" => (),
       x if is_read_operator(x) => (),
       "return"|"if"|"for"|"do"|"continue_statement"
         |"comment"|"else"|"while"|"switch"
-        |"case"|"break_statement"|"default" => (),
+        |"case"|"break_statement"|"default"|"type_qualifier"
+        |"type_identifier" => (),
       "sizeof_expression" => (),
       x if is_literal(x) => (),
       "type_descriptor" => (),
@@ -565,6 +592,7 @@ fn extract_field_expression(node: &Node, code: &str) -> Vec<AST> {
       }),
       x if is_statement(x) => children.append(&mut extract_statement(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
+      "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "field_identifier" => (),
       "this" => (),
       "("|")"|"{"|"}"|";"|"."|"->" => (),
@@ -589,9 +617,9 @@ fn extract_parameters(node: &Node, code: &str) -> Vec<AST> {
       "("|")"|"," => (),
       "field_identifier"|"identifier"|"destructor_name" => (),
       "qualified_identifier" => (),
-      "operator_name" => (),
+      "operator_name"|"type_qualifier"|"virtual_specifier"|"&" => (),
       x if is_primitive_type(x) => (),
-      "parameter_list" => children.append(&mut extract_parameters(&child, code)),
+      "parameter_list"|"function_declarator"|"reference_declarator"|"pointer_declarator" => children.append(&mut extract_parameters(&child, code)),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("extract_parameters: {}", child.to_sexp())),
         range: child.byte_range(),
@@ -883,7 +911,7 @@ fn get_function_name(node: &Node, code: &str) -> (String, Option<String>) {
         namespace = Some(code[range.start..range.end].to_string());
       },
       "template_type"|"function_declarator"|"qualified_identifier"
-        |"pointer_declarator" => {
+        |"pointer_declarator"|"reference_declarator" => {
         return get_function_name(&child, code)
       },
       _ => (),
@@ -929,7 +957,7 @@ fn is_statement(kind: &str) -> bool {
       |"subscript_expression"|"subscript_argument_list"
       |"cast_expression"|"while_statement"|"pointer_expression"
       |"switch_statement"|"case_statement"|"conditional_expression"
-      |"do_statement"|"new_declarator" => true,
+      |"do_statement"|"new_declarator"|"for_range_loop" => true,
     _ => false
   }
 }
