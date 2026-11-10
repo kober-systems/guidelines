@@ -24,6 +24,15 @@ fn parses_task_repository_header_into_ast_structure() {
   assert_eq!(actual, vec![include_task_repository_ast(&fixture)]);
 }
 
+#[test]
+fn parses_task_storage_test_main_into_ast_structure() {
+  let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli_task_tracker");
+
+  let actual = get_sources(&fixture.join("test/test_task_storage/test_main.cpp")).unwrap();
+
+  assert_eq!(actual, vec![test_task_storage_main_ast(&fixture)]);
+}
+
 fn include_task_ast(fixture: &Path) -> AST {
     AST {
         name: fixture.join("include/Task.h").to_string_lossy().into_owned(),
@@ -531,6 +540,115 @@ fn include_task_repository_ast(fixture: &Path) -> AST {
             },
         ],
         range: 0..270,
+        instructions: vec![],
+    }
+}
+
+fn test_task_storage_main_ast(fixture: &Path) -> AST {
+    AST {
+        name: fixture.join("test/test_task_storage/test_main.cpp").to_string_lossy().into_owned(),
+        kind: File {
+            content: read_fixture(&fixture, "test/test_task_storage/test_main.cpp"),
+        },
+        children: vec![
+            AST {
+                name: "test_task_storage_adds_and_completes_tasks".to_string(),
+                kind: Function(
+                    Function {
+                        is_virtual: false,
+                        visibility: "public".to_string(),
+                        in_external_namespace: None,
+                    },
+                ),
+                children: vec![],
+                dependencies: vec![],
+                range: 20..70,
+                instructions: vec![],
+            },
+            AST {
+                name: "setup".to_string(),
+                kind: Function(
+                    Function {
+                        is_virtual: false,
+                        visibility: "public".to_string(),
+                        in_external_namespace: None,
+                    },
+                ),
+                children: vec![
+                    AST {
+                        name: "UNITY_BEGIN".to_string(),
+                        kind: Reference(
+                            Call,
+                        ),
+                        children: vec![],
+                        dependencies: vec![],
+                        range: 89..100,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "RUN_TEST".to_string(),
+                        kind: Reference(
+                            Call,
+                        ),
+                        children: vec![],
+                        dependencies: vec![
+                          AST {
+                              name: "test_task_storage_adds_and_completes_tasks".to_string(),
+                              kind: Reference(
+                                Read,
+                              ),
+                              children: vec![],
+                              dependencies: vec![],
+                              range: 115..157,
+                              instructions: vec![],
+                          },
+                        ],
+                        range: 106..114,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "UNITY_END".to_string(),
+                        kind: Reference(
+                            Call,
+                        ),
+                        children: vec![],
+                        dependencies: vec![],
+                        range: 162..171,
+                        instructions: vec![],
+                    },
+                ],
+                dependencies: vec![],
+                range: 72..176,
+                instructions: vec![],
+            },
+            AST {
+                name: "loop".to_string(),
+                kind: Function(
+                    Function {
+                        is_virtual: false,
+                        visibility: "public".to_string(),
+                        in_external_namespace: None,
+                    },
+                ),
+                children: vec![],
+                dependencies: vec![],
+                range: 178..192,
+                instructions: vec![],
+            },
+        ],
+        dependencies: vec![
+            AST {
+                name: "<unity.h>".to_string(),
+                kind: Reference(
+                    Depend,
+                ),
+                children: vec![],
+                dependencies: vec![],
+                range: 0..19,
+                instructions: vec![],
+            },
+        ],
+        range: 0..193,
         instructions: vec![],
     }
 }

@@ -548,28 +548,41 @@ fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
 
 fn extract_call_expression(node: &Node, code: &str) -> Vec<AST> {
   let mut children = vec![];
+  let mut name = None;
+  let mut range = node.byte_range();
+  let mut dependencies = vec![];
 
   for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
-    let range = child.byte_range();
+    let child_range = child.byte_range();
     match child.kind() {
-      "identifier"|"qualified_identifier" => children.push(AST {
-        name: code[range.start..range.end].to_string(),
-        kind: Kind::Reference(Reference::Call),
-        range,
-        ..AST::default()
-      } ),
+      "identifier"|"qualified_identifier" => {
+        name = Some(code[child_range.start..child_range.end].to_string());
+        range = child_range;
+      }
       "template_function" => children.append(&mut extract_call_expression(&child, code)),
-      "template_argument_list" => children.append(&mut extract_template_arguments(&child, code)),
-      "argument_list" => children.append(&mut extract_arguments(&child, code)),
+      "template_argument_list" => dependencies.append(&mut extract_template_arguments(&child, code)),
+      "argument_list" => dependencies.append(&mut extract_arguments(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
       "("|")"|"{"|"}"|";" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("extract_call_expression: {}", child.to_sexp())),
-        range: child.byte_range(),
+        range: child_range,
         ..AST::default()
       }),
     }
+  }
+
+  if let Some(name) = name {
+    children.insert(0, AST {
+      name,
+      kind: Kind::Reference(Reference::Call),
+      dependencies,
+      range,
+      ..AST::default()
+    });
+  } else {
+    children.append(&mut dependencies);
   }
 
   children
@@ -689,18 +702,12 @@ fn extract_arguments(node: &Node, code: &str) -> Vec<AST> {
     let child = node.child(idx).unwrap();
     let range = child.byte_range();
     match child.kind() {
-      "identifier"|"qualified_identifier" => {
-        let name = &code[range.start..range.end];
-        children.push(AST {
-          name: name.to_string(),
-          kind: Kind::Variable(Variable {
-            is_const: false,
-            visibility: "public".to_string(),
-          }),
-          range,
-          ..AST::default()
-        })
-      }
+      "identifier"|"qualified_identifier" => children.push(AST {
+        name: code[range.start..range.end].to_string(),
+        kind: Kind::Reference(Reference::Read),
+        range,
+        ..AST::default()
+      }),
       "pointer_expression" => children.append(&mut extract_arguments(&child, code) ),
       x if is_statement(x) => children.append(&mut extract_statement(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
