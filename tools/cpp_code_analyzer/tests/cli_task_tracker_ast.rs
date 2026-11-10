@@ -51,6 +51,15 @@ fn parses_task_storage_header_into_ast_structure() {
   assert_eq!(actual, vec![task_storage_header_ast(&fixture)]);
 }
 
+#[test]
+fn parses_task_storage_source_into_ast_structure() {
+  let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli_task_tracker");
+
+  let actual = get_sources(&fixture.join("lib/TaskStorage/src/TaskStorage.cpp")).unwrap();
+
+  assert_eq!(actual, vec![task_storage_source_ast(&fixture)]);
+}
+
 fn include_task_ast(fixture: &Path) -> AST {
     AST {
         name: fixture.join("include/Task.h").to_string_lossy().into_owned(),
@@ -1365,6 +1374,646 @@ fn task_storage_header_ast(fixture: &Path) -> AST {
             },
         ],
         range: 0..291,
+        instructions: vec![],
+    }
+}
+
+fn task_storage_source_ast(fixture: &Path) -> AST {
+    AST {
+        name: fixture.join("lib/TaskStorage/src/TaskStorage.cpp").to_string_lossy().into_owned(),
+        kind: File {
+            content: read_fixture(&fixture, "lib/TaskStorage/src/TaskStorage.cpp"),
+        },
+        children: vec![
+            AST {
+                name: "storage_revision".to_string(),
+                kind: Variable(
+                    Variable {
+                        is_const: false,
+                        visibility: "public".to_string(),
+                    },
+                ),
+                children: vec![],
+                dependencies: vec![
+                  AST {
+                      name: "int".to_string(),
+                      kind: Reference(TypeRead),
+                      children: vec![],
+                      dependencies: vec![],
+                      range: 122..125,
+                      instructions: vec![],
+                  },
+                ],
+                range: 126..142,
+                instructions: vec![],
+            },
+            AST {
+                name: "add".to_string(),
+                kind: Function(
+                    Function {
+                        is_virtual: false,
+                        visibility: "public".to_string(),
+                        in_external_namespace: Some(
+                            "TaskStorage".to_string(),
+                        ),
+                    },
+                ),
+                children: vec![
+                    AST {
+                        name: "title".to_string(),
+                        kind: Variable(
+                            Variable {
+                                is_const: false,
+                                visibility: "public".to_string(),
+                            },
+                        ),
+                        children: vec![],
+                        dependencies: vec![
+                            AST {
+                                name: "std::string".to_string(),
+                                kind: Reference(
+                                    TypeRead,
+                                ),
+                                children: vec![],
+                                dependencies: vec![],
+                                range: 0..0,
+                                instructions: vec![],
+                            },
+                        ],
+                        range: 171..188,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "task".to_string(),
+                        kind: Variable(
+                            Variable {
+                                is_const: false,
+                                visibility: "private".to_string(),
+                            },
+                        ),
+                        children: vec![],
+                        dependencies: vec![
+                          AST {
+                              name: "Task".to_string(),
+                              kind: Reference(
+                                  TypeRead,
+                              ),
+                              children: vec![],
+                              dependencies: vec![],
+                              range: 194..198,
+                              instructions: vec![],
+                          },
+                          AST {
+                              name: "static_cast".to_string(),
+                              kind: Reference(
+                                  Call,
+                              ),
+                              children: vec![],
+                              dependencies: vec![
+                                AST {
+                                    name: "tasks_".to_string(),
+                                    kind: Reference(
+                                        Read,
+                                    ),
+                                    children: vec![
+                                      AST {
+                                          name: "size".to_string(),
+                                          kind: Reference(
+                                              Call,
+                                          ),
+                                          children: vec![],
+                                          dependencies: vec![],
+                                          range: 228..232,
+                                          instructions: vec![],
+                                      },
+                                    ],
+                                    dependencies: vec![],
+                                    range: 221..227,
+                                    instructions: vec![],
+                                },
+                                AST {
+                                    name: "std::move".to_string(),
+                                    kind: Reference(
+                                        Call,
+                                    ),
+                                    children: vec![],
+                                    dependencies: vec![
+                                      AST {
+                                          name: "title".to_string(),
+                                          kind: Reference(Read),
+                                          children: vec![],
+                                          dependencies: vec![],
+                                          range: 251..256,
+                                          instructions: vec![],
+                                      },
+                                    ],
+                                    range: 241..250,
+                                    instructions: vec![],
+                                },
+                              ],
+                              range: 204..215,
+                              instructions: vec![],
+                          },
+                        ],
+                        range: 199..203,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "tasks_".to_string(),
+                        kind: Reference(
+                            Read,
+                        ),
+                        children: vec![
+                          AST {
+                              name: "push_back".to_string(),
+                              kind: Reference(Call),
+                              children: vec![],
+                              dependencies: vec![
+                                AST {
+                                    name: "task".to_string(),
+                                    kind: Reference(Read),
+                                    children: vec![],
+                                    dependencies: vec![],
+                                    range: 279..283,
+                                    instructions: vec![],
+                                },
+                              ],
+                              range: 269..278,
+                              instructions: vec![],
+                          },
+                        ],
+                        dependencies: vec![],
+                        range: 262..268,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "task".to_string(),
+                        kind: Reference(Read),
+                        children: vec![],
+                        dependencies: vec![],
+                        range: 295..299,
+                        instructions: vec![],
+                    },
+                ],
+                dependencies: vec![
+                    AST {
+                        name: "Task".to_string(),
+                        kind: Reference(
+                            TypeRead,
+                        ),
+                        children: vec![],
+                        dependencies: vec![],
+                        range: 149..153,
+                        instructions: vec![],
+                    },
+                ],
+                range: 149..302,
+                instructions: vec![],
+            },
+            AST {
+                name: "all".to_string(),
+                kind: Function(
+                    Function {
+                        is_virtual: false,
+                        visibility: "public".to_string(),
+                        in_external_namespace: Some(
+                            "TaskStorage".to_string(),
+                        ),
+                    },
+                ),
+                children: vec![
+                    AST {
+                        name: "tasks_".to_string(),
+                        kind: Reference(
+                            Read,
+                        ),
+                        children: vec![],
+                        dependencies: vec![],
+                        range: 358..364,
+                        instructions: vec![],
+                    },
+                ],
+                dependencies: vec![
+                    AST {
+                        name: "std::vector<Task>".to_string(),
+                        kind: Reference(
+                            TypeRead,
+                        ),
+                        children: vec![],
+                        dependencies: vec![
+                          AST {
+                              name: "std::vector".to_string(),
+                              kind: Reference(
+                                  TypeRead,
+                              ),
+                              children: vec![],
+                              dependencies: vec![],
+                              range: 304..315,
+                              instructions: vec![],
+                          },
+                          AST {
+                              name: "Task".to_string(),
+                              kind: Reference(
+                                  TypeRead,
+                              ),
+                              children: vec![],
+                              dependencies: vec![],
+                              range: 316..320,
+                              instructions: vec![],
+                          },
+                        ],
+                        range: 304..321,
+                        instructions: vec![],
+                    },
+                ],
+                range: 304..367,
+                instructions: vec![],
+            },
+            AST {
+                name: "complete".to_string(),
+                kind: Function(
+                    Function {
+                        is_virtual: false,
+                        visibility: "public".to_string(),
+                        in_external_namespace: Some(
+                            "TaskStorage".to_string(),
+                        ),
+                    },
+                ),
+                children: vec![
+                    AST {
+                        name: "id".to_string(),
+                        kind: Variable(
+                            Variable {
+                                is_const: false,
+                                visibility: "public".to_string(),
+                            },
+                        ),
+                        children: vec![],
+                        dependencies: vec![],
+                        range: 396..402,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "task".to_string(),
+                        kind: Variable(
+                            Variable {
+                                is_const: false,
+                                visibility: "private".to_string(),
+                            },
+                        ),
+                        children: vec![],
+                        dependencies: vec![
+                          AST {
+                              name: "Task".to_string(),
+                              kind: Reference(
+                                  TypeRead,
+                              ),
+                              children: vec![],
+                              dependencies: vec![],
+                              range: 413..417,
+                              instructions: vec![],
+                          },
+                        ],
+                        range: 417..423,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "tasks_".to_string(),
+                        kind: Reference(
+                            Read,
+                        ),
+                        children: vec![],
+                        dependencies: vec![],
+                        range: 426..432,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "task".to_string(),
+                        kind: Reference(
+                            Read,
+                        ),
+                        children: vec![
+                          AST {
+                              name: "id".to_string(),
+                              kind: Reference(
+                                  Call,
+                              ),
+                              children: vec![],
+                              dependencies: vec![],
+                              range: 449..451,
+                              instructions: vec![],
+                          },
+                        ],
+                        dependencies: vec![],
+                        range: 444..448,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "id".to_string(),
+                        kind: Reference(
+                            Read,
+                        ),
+                        children: vec![],
+                        dependencies: vec![],
+                        range: 457..459,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "task".to_string(),
+                        kind: Reference(
+                            Read,
+                        ),
+                        children: vec![
+                          AST {
+                              name: "complete".to_string(),
+                              kind: Reference(
+                                  Call,
+                              ),
+                              children: vec![],
+                              dependencies: vec![],
+                              range: 474..482,
+                              instructions: vec![],
+                          },
+                        ],
+                        dependencies: vec![],
+                        range: 469..473,
+                        instructions: vec![],
+                    },
+                ],
+                dependencies: vec![
+                    AST {
+                        name: "bool".to_string(),
+                        kind: Reference(
+                            TypeRead,
+                        ),
+                        children: vec![],
+                        dependencies: vec![],
+                        range: 369..373,
+                        instructions: vec![],
+                    },
+                ],
+                range: 369..532,
+                instructions: vec![],
+            },
+            AST {
+                name: "test_task_storage_adds_and_completes_tasks".to_string(),
+                kind: Function(
+                    Function {
+                        is_virtual: false,
+                        visibility: "public".to_string(),
+                        in_external_namespace: None,
+                    },
+                ),
+                children: vec![
+                    AST {
+                        name: "storage".to_string(),
+                        kind: Variable(
+                            Variable {
+                                is_const: false,
+                                visibility: "private".to_string(),
+                            },
+                        ),
+                        children: vec![],
+                        dependencies: vec![
+                          AST {
+                              name: "TaskStorage".to_string(),
+                              kind: Reference(
+                                  TypeRead,
+                              ),
+                              children: vec![],
+                              dependencies: vec![],
+                              range: 625..636,
+                              instructions: vec![],
+                          },
+                        ],
+                        range: 637..644,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "task".to_string(),
+                        kind: Variable(
+                            Variable {
+                                is_const: true,
+                                visibility: "private".to_string(),
+                            },
+                        ),
+                        children: vec![],
+                        dependencies: vec![
+                          AST {
+                              name: "Task".to_string(),
+                              kind: Reference(
+                                  TypeRead,
+                              ),
+                              children: vec![],
+                              dependencies: vec![],
+                              range: 654..658,
+                              instructions: vec![],
+                          },
+                          AST {
+                              name: "storage".to_string(),
+                              kind: Reference(
+                                  Read,
+                              ),
+                              children: vec![
+                                AST {
+                                    name: "add".to_string(),
+                                    kind: Reference(
+                                        Call,
+                                    ),
+                                    children: vec![],
+                                    dependencies: vec![],
+                                    range: 674..677,
+                                    instructions: vec![],
+                                },
+                              ],
+                              dependencies: vec![],
+                              range: 666..673,
+                              instructions: vec![],
+                          },
+                        ],
+                        range: 659..663,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "TEST_ASSERT_EQUAL".to_string(),
+                        kind: Reference(
+                            Call,
+                        ),
+                        children: vec![],
+                        dependencies: vec![
+                          AST {
+                              name: "task".to_string(),
+                              kind: Reference(
+                                  Read,
+                              ),
+                              children: vec![
+                                AST {
+                                    name: "id".to_string(),
+                                    kind: Reference(
+                                        Call,
+                                    ),
+                                    children: vec![],
+                                    dependencies: vec![],
+                                    range: 723..725,
+                                    instructions: vec![],
+                                },
+                              ],
+                              dependencies: vec![],
+                              range: 718..722,
+                              instructions: vec![],
+                          },
+                        ],
+                        range: 697..714,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "TEST_ASSERT_TRUE".to_string(),
+                        kind: Reference(
+                            Call,
+                        ),
+                        children: vec![],
+                        dependencies: vec![
+                          AST {
+                              name: "storage".to_string(),
+                              kind: Reference(
+                                  Read,
+                              ),
+                              children: vec![
+                                AST {
+                                    name: "complete".to_string(),
+                                    kind: Reference(
+                                        Call,
+                                    ),
+                                    children: vec![],
+                                    dependencies: vec![
+                                      AST {
+                                          name: "task".to_string(),
+                                          kind: Reference(
+                                              Read,
+                                          ),
+                                          children: vec![
+                                            AST {
+                                                name: "id".to_string(),
+                                                kind: Reference(
+                                                    Call,
+                                                ),
+                                                children: vec![],
+                                                dependencies: vec![],
+                                                range: 771..773,
+                                                instructions: vec![],
+                                            },
+                                          ],
+                                          dependencies: vec![],
+                                          range: 766..770,
+                                          instructions: vec![],
+                                      },
+                                    ],
+                                    range: 757..765,
+                                    instructions: vec![],
+                                },
+                              ],
+                              dependencies: vec![],
+                              range: 749..756,
+                              instructions: vec![],
+                          },
+                        ],
+                        range: 732..748,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "TEST_ASSERT_TRUE".to_string(),
+                        kind: Reference(
+                            Call,
+                        ),
+                        children: vec![],
+                        dependencies: vec![
+                            AST {
+                                name: "storage".to_string(),
+                                kind: Reference(
+                                    Read,
+                                ),
+                                children: vec![
+                                    AST {
+                                        name: "all".to_string(),
+                                        kind: Reference(
+                                            Call,
+                                        ),
+                                        children: vec![
+                                            AST {
+                                                name: "front".to_string(),
+                                                kind: Reference(
+                                                    Call,
+                                                ),
+                                                children: vec![
+                                                    AST {
+                                                        name: "completed".to_string(),
+                                                        kind: Reference(
+                                                            Call,
+                                                        ),
+                                                        children: vec![],
+                                                        dependencies: vec![],
+                                                        range: 820..829,
+                                                        instructions: vec![],
+                                                    },
+                                                ],
+                                                dependencies: vec![],
+                                                range: 812..817,
+                                                instructions: vec![],
+                                            },
+                                        ],
+                                        dependencies: vec![],
+                                        range: 806..809,
+                                        instructions: vec![],
+                                    },
+                                ],
+                                dependencies: vec![],
+                                range: 798..805,
+                                instructions: vec![],
+                            },
+                        ],
+                        range: 781..797,
+                        instructions: vec![],
+                    },
+                ],
+                dependencies: vec![],
+                range: 571..835,
+                instructions: vec![],
+            },
+        ],
+        dependencies: vec![
+            AST {
+                name: "\"TaskStorage.h\"".to_string(),
+                kind: Reference(
+                    Depend,
+                ),
+                children: vec![],
+                dependencies: vec![],
+                range: 0..25,
+                instructions: vec![],
+            },
+            AST {
+                name: "<utility>".to_string(),
+                kind: Reference(
+                    Depend,
+                ),
+                children: vec![],
+                dependencies: vec![],
+                range: 26..45,
+                instructions: vec![],
+            },
+            AST {
+                name: "<unity.h>".to_string(),
+                kind: Reference(
+                    Depend,
+                ),
+                children: vec![],
+                dependencies: vec![],
+                range: 551..570,
+                instructions: vec![],
+            },
+        ],
+        range: 0..843,
         instructions: vec![],
     }
 }
