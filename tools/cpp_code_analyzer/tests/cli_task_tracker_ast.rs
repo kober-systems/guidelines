@@ -320,3 +320,7 @@ fn include_task_ast(fixture: &Path) -> AST {
     }
 }
 
+fn read_fixture(fixture: &Path, path: &str) -> String {
+  fs::read_to_string(fixture.join(path)).unwrap()
+}
+
