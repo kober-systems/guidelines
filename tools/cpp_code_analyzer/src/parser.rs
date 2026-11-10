@@ -363,9 +363,38 @@ fn declaration_type_dependencies(field: &Node, code: &str) -> Vec<AST> {
 
 fn type_reference(node: &Node, code: &str) -> AST {
   let range = node.byte_range();
+  let text = &code[range.start..range.end];
+  let dependencies = text.find('<').map_or_else(Vec::new, |open| {
+    let base = &text[..open];
+    let arguments = &text[open + 1..text.len() - 1];
+    let mut dependencies = vec![AST {
+      name: base.to_string(),
+      kind: Kind::Reference(Reference::TypeRead),
+      range: range.start..range.start + open,
+      ..AST::default()
+    }];
+
+    let mut argument_start = open + 1;
+    for raw_argument in arguments.split(',') {
+      let argument = raw_argument.trim();
+      if !argument.is_empty() {
+        let start = range.start + argument_start + raw_argument.find(argument).unwrap();
+        dependencies.push(AST {
+          name: argument.to_string(),
+          kind: Kind::Reference(Reference::TypeRead),
+          range: start..start + argument.len(),
+          ..AST::default()
+        });
+      }
+      argument_start += raw_argument.len() + 1;
+    }
+    dependencies
+  });
+
   AST {
     name: code[range.start..range.end].to_string(),
     kind: Kind::Reference(Reference::TypeRead),
+    dependencies,
     range,
     ..AST::default()
   }

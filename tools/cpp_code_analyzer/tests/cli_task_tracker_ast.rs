@@ -15,6 +15,15 @@ fn parses_task_header_into_ast_structure() {
   assert_eq!(actual, vec![include_task_ast(&fixture)]);
 }
 
+#[test]
+fn parses_task_repository_header_into_ast_structure() {
+  let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli_task_tracker");
+
+  let actual = get_sources(&fixture.join("include/TaskRepository.h")).unwrap();
+
+  assert_eq!(actual, vec![include_task_repository_ast(&fixture)]);
+}
+
 fn include_task_ast(fixture: &Path) -> AST {
     AST {
         name: fixture.join("include/Task.h").to_string_lossy().into_owned(),
@@ -316,6 +325,212 @@ fn include_task_ast(fixture: &Path) -> AST {
             },
         ],
         range: 0..398,
+        instructions: vec![],
+    }
+}
+
+fn include_task_repository_ast(fixture: &Path) -> AST {
+    AST {
+        name: fixture.join("include/TaskRepository.h").to_string_lossy().into_owned(),
+        kind: File {
+            content: read_fixture(&fixture, "include/TaskRepository.h"),
+        },
+        children: vec![
+            AST {
+                name: "TaskRepository".to_string(),
+                kind: Class(
+                    Class {
+                        is_abstract: false,
+                    },
+                ),
+                children: vec![
+                    AST {
+                        name: "~TaskRepository".to_string(),
+                        kind: Function(
+                            Function {
+                                is_virtual: true,
+                                visibility: "public".to_string(),
+                                in_external_namespace: None,
+                            },
+                        ),
+                        children: vec![],
+                        dependencies: vec![],
+                        range: 104..140,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "Task".to_string(),
+                        kind: Reference(
+                            TypeRead,
+                        ),
+                        children: vec![],
+                        dependencies: vec![],
+                        range: 152..156,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "add".to_string(),
+                        kind: Function(
+                            Function {
+                                is_virtual: true,
+                                visibility: "public".to_string(),
+                                in_external_namespace: None,
+                            },
+                        ),
+                        children: vec![
+                            AST {
+                                name: "title".to_string(),
+                                kind: Variable(
+                                    Variable {
+                                        is_const: false,
+                                        visibility: "public".to_string(),
+                                    },
+                                ),
+                                children: vec![],
+                                dependencies: vec![
+                                    AST {
+                                        name: "std::string".to_string(),
+                                        kind: Reference(
+                                            TypeRead,
+                                        ),
+                                        children: vec![],
+                                        dependencies: vec![],
+                                        range: 0..0,
+                                        instructions: vec![],
+                                    },
+                                ],
+                                range: 161..178,
+                                instructions: vec![],
+                            },
+                        ],
+                        dependencies: vec![],
+                        range: 144..184,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "all".to_string(),
+                        kind: Function(
+                            Function {
+                                is_virtual: true,
+                                visibility: "public".to_string(),
+                                in_external_namespace: None,
+                            },
+                        ),
+                        children: vec![],
+                        dependencies: vec![
+                          AST {
+                              name: "std::vector<Task>".to_string(),
+                              kind: Reference(
+                                TypeRead
+                              ),
+                              children: vec![],
+                              dependencies: vec![
+                                AST {
+                                    name: "std::vector".to_string(),
+                                    kind: Reference(
+                                      TypeRead
+                                    ),
+                                    children: vec![],
+                                    dependencies: vec![],
+                                    range: 195..206,
+                                    instructions: vec![],
+                                },
+                                AST {
+                                    name: "Task".to_string(),
+                                    kind: Reference(
+                                      TypeRead
+                                    ),
+                                    children: vec![],
+                                    dependencies: vec![],
+                                    range: 207..211,
+                                    instructions: vec![],
+                                },
+                              ],
+                              range: 195..212,
+                              instructions: vec![],
+                          },
+                        ],
+                        range: 187..229,
+                        instructions: vec![],
+                    },
+                    AST {
+                        name: "complete".to_string(),
+                        kind: Function(
+                            Function {
+                                is_virtual: true,
+                                visibility: "public".to_string(),
+                                in_external_namespace: None,
+                            },
+                        ),
+                        children: vec![
+                            AST {
+                                name: "id".to_string(),
+                                kind: Variable(
+                                    Variable {
+                                        is_const: false,
+                                        visibility: "public".to_string(),
+                                    },
+                                ),
+                                children: vec![],
+                                dependencies: vec![],
+                                range: 254..260,
+                                instructions: vec![],
+                            },
+                        ],
+                        dependencies: vec![
+                            AST {
+                                name: "bool".to_string(),
+                                kind: Reference(
+                                    TypeRead,
+                                ),
+                                children: vec![],
+                                dependencies: vec![],
+                                range: 240..244,
+                                instructions: vec![],
+                            },
+                        ],
+                        range: 232..266,
+                        instructions: vec![],
+                    },
+                ],
+                dependencies: vec![],
+                range: 70..268,
+                instructions: vec![],
+            },
+        ],
+        dependencies: vec![
+            AST {
+                name: "<string>".to_string(),
+                kind: Reference(
+                    Depend,
+                ),
+                children: vec![],
+                dependencies: vec![],
+                range: 14..32,
+                instructions: vec![],
+            },
+            AST {
+                name: "<vector>".to_string(),
+                kind: Reference(
+                    Depend,
+                ),
+                children: vec![],
+                dependencies: vec![],
+                range: 32..50,
+                instructions: vec![],
+            },
+            AST {
+                name: "\"Task.h\"".to_string(),
+                kind: Reference(
+                    Depend,
+                ),
+                children: vec![],
+                dependencies: vec![],
+                range: 51..69,
+                instructions: vec![],
+            },
+        ],
+        range: 0..270,
         instructions: vec![],
     }
 }
