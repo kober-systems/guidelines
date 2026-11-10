@@ -65,7 +65,7 @@ fn parse_include(node: &Node, code: &str) -> AST {
         let range = child.byte_range();
         name = &code[range.start..range.end];
       }
-      "type_identifier"|"class"|";" => (),
+      "type_identifier"|"class"|";"|"#include" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("parse_include: {}", child.to_sexp())),
         range: child.byte_range(),
@@ -262,10 +262,6 @@ fn check_is_destructor(node: &Node) -> bool {
 
 fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<AST> {
   let mut children = vec![];
-  let is_function_declaration = (0..field.child_count() as u32)
-    .filter_map(|idx| field.child(idx))
-    .any(|child| child.kind() == "function_declarator");
-
   for idx in 0..field.child_count() as u32 {
     let child = field.child(idx).unwrap();
     let range = child.byte_range();
@@ -278,17 +274,7 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
             visibility: access_specifier.to_string(),
             is_const: check_is_const(&field.parent().unwrap(), code),
           }),
-          range,
-          ..AST::default()
-        });
-      }
-      "qualified_identifier" if !is_function_declaration => {
-        children.push(AST {
-          name: get_variable_name(&child, code),
-          kind: Kind::Variable(Variable {
-            visibility: access_specifier.to_string(),
-            is_const: check_is_const(&field.parent().unwrap(), code),
-          }),
+          dependencies: declaration_type_dependencies(field, code),
           range,
           ..AST::default()
         });
@@ -319,6 +305,7 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
               is_const: check_is_const(&field.parent().unwrap(), code),
             })
           },
+          dependencies: declaration_type_dependencies(field, code),
           range,
           ..AST::default()
         });
@@ -360,24 +347,59 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
   children
 }
 
+fn declaration_type_dependencies(field: &Node, code: &str) -> Vec<AST> {
+  (0..field.child_count() as u32)
+    .filter_map(|idx| field.child(idx))
+    .filter_map(|child| match child.kind() {
+      kind if is_primitive_type(kind)
+        && &code[child.byte_range().start..child.byte_range().end] != "void" => {
+          Some(type_reference(&child, code))
+        }
+      "qualified_identifier"|"template_type" => Some(type_reference(&child, code)),
+      _ => None,
+    })
+    .collect()
+}
+
+fn type_reference(node: &Node, code: &str) -> AST {
+  let range = node.byte_range();
+  AST {
+    name: code[range.start..range.end].to_string(),
+    kind: Kind::Reference(Reference::TypeRead),
+    range,
+    ..AST::default()
+  }
+}
+
+fn function_name(node: &Node, code: &str) -> Option<(String, Option<String>)> {
+  if node.kind() == "function_declarator" {
+    return Some(get_function_name(node, code));
+  }
+
+  (0..node.child_count() as u32)
+    .filter_map(|idx| node.child(idx))
+    .find_map(|child| function_name(&child, code))
+}
+
 fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
-  let (name, namespace) = get_function_name(field, code);
+  let (name, namespace) = function_name(field, code)
+    .unwrap_or_else(|| get_function_name(field, code));
   let mut dependencies = vec![];
   let mut children = vec![];
 
   for idx in 0..field.child_count() as u32 {
     let child = field.child(idx).unwrap();
     match child.kind() {
-      x if is_primitive_type(x) => dependencies.push(AST {
-        kind: Kind::Reference(Reference::TypeRead),
-        range: child.byte_range(),
-        ..AST::default()
-      }),
+      x if is_primitive_type(x) => {
+        if &code[child.byte_range().start..child.byte_range().end] != "void" {
+          dependencies.push(type_reference(&child, code));
+        }
+      }
+      "qualified_identifier"|"template_type" => dependencies.push(type_reference(&child, code)),
       "function_declarator" => children.append(&mut extract_parameters(&child, code)),
-      "type_identifier"|"qualified_identifier"|";"|"comment" => (),
+      "type_identifier"|";"|"comment" => (),
       "compound_statement" => children.append(&mut extract_statement(&child, code)),
       "field_initializer_list" => (),
-      "template_type" => (),
       "pointer_declarator"|"reference_declarator" => children.append(&mut extract_parameters(&child, code)),
       x if is_literal(x) => (),
       "=" => (),
