@@ -272,7 +272,11 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
           name: get_variable_name(&child, code),
           kind: Kind::Variable(Variable {
             visibility: access_specifier.to_string(),
-            is_const: check_is_const(&field.parent().unwrap(), code),
+            is_const: if child.kind() == "reference_declarator" {
+              check_is_const(&field.parent().unwrap(), code)
+            } else {
+              check_is_const(field, code)
+            },
           }),
           dependencies: declaration_type_dependencies(field, code),
           range,
@@ -281,7 +285,17 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
       }
       "qualified_identifier" => (),
       "init_declarator" => {
-        children.append(&mut extract_declaration(&child, code, access_specifier));
+        let mut declarators = extract_declaration(&child, code, access_specifier);
+        let is_const = check_is_const(field, code);
+        for declarator in &mut declarators {
+          if let Kind::Variable(variable) = &mut declarator.kind {
+            variable.is_const |= is_const;
+            if declarator.dependencies.is_empty() {
+              declarator.dependencies = declaration_type_dependencies(field, code);
+            }
+          }
+        }
+        children.append(&mut declarators);
       },
       "pointer_declarator" => {
         let is_function = code[range.start..range.end].contains("(");
@@ -321,14 +335,10 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
       "placeholder_type_specifier"
         |"type_qualifier"|"storage_class_specifier"|"attribute_specifier"
         |"sizeof_expression"|"virtual" => (),
-      "type_identifier" => {
-        children.push(AST {
-          name: code[range.start..range.end].to_string(),
-          kind: Kind::Reference(Reference::TypeRead),
-          range,
-          ..AST::default()
-        });
-      }
+      // Function return types remain declaration-level references; variable
+      // types are stored on the corresponding variable's dependencies.
+      "type_identifier" if has_function_declarator(field) => children.push(type_reference(&child, code)),
+      "type_identifier" => (),
       x if is_literal(x) => (),
       "initializer_list" => (),
       x if is_statement(x) => children.append(&mut extract_statement(&child, code)),
@@ -347,6 +357,12 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
   children
 }
 
+fn has_function_declarator(node: &Node) -> bool {
+  (0..node.child_count() as u32)
+    .filter_map(|idx| node.child(idx))
+    .any(|child| child.kind() == "function_declarator")
+}
+
 fn declaration_type_dependencies(field: &Node, code: &str) -> Vec<AST> {
   (0..field.child_count() as u32)
     .filter_map(|idx| field.child(idx))
@@ -355,7 +371,7 @@ fn declaration_type_dependencies(field: &Node, code: &str) -> Vec<AST> {
         && &code[child.byte_range().start..child.byte_range().end] != "void" => {
           Some(type_reference(&child, code))
         }
-      "qualified_identifier"|"template_type" => Some(type_reference(&child, code)),
+      "type_identifier"|"qualified_identifier"|"template_type" => Some(type_reference(&child, code)),
       _ => None,
     })
     .collect()
@@ -478,9 +494,10 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       "reference_declarator" => children.push(AST {
         name: get_variable_name(&child, code),
         kind: Kind::Variable(Variable {
-          is_const: false,
+          is_const: check_is_const(node, code),
           visibility: "public".to_string(),
         }),
+        dependencies: statement_type_dependencies(node, code),
         range,
         ..AST::default()
       }),
@@ -503,6 +520,22 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
   }
 
   children
+}
+
+fn statement_type_dependencies(node: &Node, code: &str) -> Vec<AST> {
+  for idx in 0..node.child_count() as u32 {
+    let child = node.child(idx).unwrap();
+    if child.kind() == "type_identifier" {
+      return vec![type_reference(&child, code)];
+    }
+
+    let dependencies = statement_type_dependencies(&child, code);
+    if !dependencies.is_empty() {
+      return dependencies;
+    }
+  }
+
+  vec![]
 }
 
 fn extract_update_expression(node: &Node, code: &str) -> Vec<AST> {
@@ -1025,20 +1058,11 @@ fn get_function_name(node: &Node, code: &str) -> (String, Option<String>) {
 }
 
 fn check_is_const(node: &Node, code: &str) -> bool {
-  for idx in 0..node.child_count() as u32 {
-    let child = node.child(idx).unwrap();
-    let range = child.byte_range();
-    match child.kind() {
-      "type_qualifier" => {
-        return &code[range.start..range.end] == "constexpr";
-      },
-      "declaration" => {
-        return check_is_const(&child, code);
-      }
-      _ => (),
-    }
-  }
-  false
+  let range = node.byte_range();
+  let line_start = code[..range.start].rfind('\n').map_or(0, |index| index + 1);
+  code[line_start..range.end]
+    .split(|character: char| !character.is_alphanumeric() && character != '_')
+    .any(|token| token == "const" || token == "constexpr")
 }
 
 fn is_literal(kind: &str) -> bool {
