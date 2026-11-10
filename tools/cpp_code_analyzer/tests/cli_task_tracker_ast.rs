@@ -7,6 +7,23 @@ use cpp_code_analyzer::{
 use pretty_assertions::assert_eq;
 
 #[test]
+fn parses_cli_task_tracker_into_full_ast_structure() {
+  let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli_task_tracker");
+
+  let actual = get_sources(&fixture).unwrap();
+  let expected = vec![
+    include_task_ast(&fixture),
+    include_task_repository_ast(&fixture),
+    test_task_storage_main_ast(&fixture),
+    main_ast(&fixture),
+    task_storage_header_ast(&fixture),
+    task_storage_source_ast(&fixture),
+  ];
+
+  assert_eq!(actual, expected);
+}
+
+#[test]
 fn parses_task_header_into_ast_structure() {
   let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli_task_tracker");
 
