@@ -168,12 +168,29 @@ class Derived: public AbstractInterface {
         name: "my_global".to_string(),
         problematic: vec![],
       }),
+      (NodeId::new("int"), Entity {
+        kind: "Ref".to_string(),
+        name: "int".to_string(),
+        problematic: vec![],
+      }),
     ]),
     connections: vec![
       Connection {
         kind: ConnectionType::Inheritance,
         from: NodeId::new("Derived"),
         to: NodeId::new("AbstractInterface"),
+        problematic: vec![],
+      },
+      Connection {
+        kind: ConnectionType::Composition,
+        from: NodeId::new("Derived"),
+        to: NodeId::new("int"),
+        problematic: vec![],
+      },
+      Connection {
+        kind: ConnectionType::Composition,
+        from: NodeId::new("Derived"),
+        to: NodeId::new("int"),
         problematic: vec![],
       },
       Connection {
@@ -225,12 +242,29 @@ void Derived::foo(int param) {
         name: "my_global".to_string(),
         problematic: vec!["It's not allowed to create global variables ('my_global'). Global variables create invisible coupling.".to_string()],
       }),
+      (NodeId::new("int"), Entity {
+        kind: "Ref".to_string(),
+        name: "int".to_string(),
+        problematic: vec![],
+      }),
     ]),
     connections: vec![
       Connection {
         kind: ConnectionType::Inheritance,
         from: NodeId::new("Derived"),
         to: NodeId::new("AbstractInterface"),
+        problematic: vec![],
+      },
+      Connection {
+        kind: ConnectionType::Composition,
+        from: NodeId::new("Derived"),
+        to: NodeId::new("int"),
+        problematic: vec![],
+      },
+      Connection {
+        kind: ConnectionType::Composition,
+        from: NodeId::new("Derived"),
+        to: NodeId::new("int"),
         problematic: vec![],
       },
       Connection {
