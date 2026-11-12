@@ -343,18 +343,9 @@ fn extract_references(input: &AST, from: &str, code: &str, base: GraphData) -> G
     },
     Kind::Unhandled(_element) => base,
     Kind::Variable(_) => {
-      //for dependecy in input.dependencies.iter() {
-      //  let dep_name = dependecy.name.to_string();
-      //  if !base.nodes.contains_key(&dep_name) {
-      //    base = extract_node(dependecy, code, base);
-      //  }
-      //  base.connections.push(Connection {
-      //    kind: ConnectionType::Composition,
-      //    from: input.name.clone(),
-      //    to: dep_name,
-      //    problematic: vec![],
-      //  });
-      //}
+      for dependency in &input.dependencies {
+        base = extract_references(dependency, from, code, base, declarations);
+      }
       base
     }
     Kind::LintError(_) => base, // TODO change is_problematic
