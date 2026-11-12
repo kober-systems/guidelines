@@ -551,6 +551,7 @@ fn extract_call_expression(node: &Node, code: &str) -> Vec<AST> {
   let mut name = None;
   let mut range = node.byte_range();
   let mut dependencies = vec![];
+  let mut member_target = None;
 
   for idx in 0..node.child_count() as u32 {
     let child = node.child(idx).unwrap();
@@ -563,7 +564,7 @@ fn extract_call_expression(node: &Node, code: &str) -> Vec<AST> {
       "template_function" => children.append(&mut extract_call_expression(&child, code)),
       "template_argument_list" => dependencies.append(&mut extract_template_arguments(&child, code)),
       "argument_list" => dependencies.append(&mut extract_arguments(&child, code)),
-      "field_expression" => children.append(&mut extract_field_expression(&child, code)),
+      "field_expression" => member_target = member_call_target(&child, code),
       "("|")"|"{"|"}"|";" => (),
       _ => children.push(AST {
         kind: Kind::Unhandled(format!("extract_call_expression: {}", child.to_sexp())),
@@ -573,7 +574,16 @@ fn extract_call_expression(node: &Node, code: &str) -> Vec<AST> {
     }
   }
 
-  if let Some(name) = name {
+  if let Some((mut target, member_name, member_range)) = member_target {
+    append_member_call(&mut target, AST {
+      name: member_name,
+      kind: Kind::Reference(Reference::Call),
+      dependencies,
+      range: member_range,
+      ..AST::default()
+    });
+    children.push(target);
+  } else if let Some(name) = name {
     children.insert(0, AST {
       name,
       kind: Kind::Reference(Reference::Call),
@@ -586,6 +596,39 @@ fn extract_call_expression(node: &Node, code: &str) -> Vec<AST> {
   }
 
   children
+}
+
+fn member_call_target(node: &Node, code: &str) -> Option<(AST, String, std::ops::Range<usize>)> {
+  let mut target = None;
+  let mut member = None;
+
+  for idx in 0..node.child_count() as u32 {
+    let child = node.child(idx)?;
+    let range = child.byte_range();
+    match child.kind() {
+      "identifier" => target = Some(AST {
+        name: code[range.start..range.end].to_string(),
+        kind: Kind::Reference(Reference::Read),
+        range,
+        ..AST::default()
+      }),
+      // A chained call is the receiver of the next member call.
+      "call_expression" => target = extract_call_expression(&child, code).into_iter().next(),
+      "field_identifier" => member = Some((code[range.start..range.end].to_string(), range)),
+      _ => (),
+    }
+  }
+
+  target.zip(member).map(|(target, (name, range))| (target, name, range))
+}
+
+fn append_member_call(target: &mut AST, call: AST) {
+  if let Some(previous_call) = target.children.last_mut()
+    .filter(|child| matches!(&child.kind, Kind::Reference(Reference::Call))) {
+    append_member_call(previous_call, call);
+  } else {
+    target.children.push(call);
+  }
 }
 
 fn extract_template_type(node: &Node, code: &str) -> Vec<AST> {
