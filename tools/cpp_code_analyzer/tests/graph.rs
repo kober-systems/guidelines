@@ -188,12 +188,6 @@ class Derived: public AbstractInterface {
         problematic: vec![],
       },
       Connection {
-        kind: ConnectionType::Composition,
-        from: NodeId::new("Derived"),
-        to: NodeId::new("int"),
-        problematic: vec![],
-      },
-      Connection {
         kind: ConnectionType::Usage,
         from: NodeId::new("Derived"),
         to: NodeId::new("my_global"),
@@ -253,12 +247,6 @@ void Derived::foo(int param) {
         kind: ConnectionType::Inheritance,
         from: NodeId::new("Derived"),
         to: NodeId::new("AbstractInterface"),
-        problematic: vec![],
-      },
-      Connection {
-        kind: ConnectionType::Composition,
-        from: NodeId::new("Derived"),
-        to: NodeId::new("int"),
         problematic: vec![],
       },
       Connection {
