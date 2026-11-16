@@ -39,6 +39,24 @@ pub struct GraphData {
   pub connections: Vec<Connection>,
 }
 
+impl GraphData {
+  fn add_graph_connection(&mut self, connection: Connection) {
+    if let Some(existing) = self.connections.iter_mut().find(|existing| {
+      existing.kind == connection.kind
+        && existing.from == connection.from
+        && existing.to == connection.to
+    }) {
+      for problem in connection.problematic {
+        if !existing.problematic.contains(&problem) {
+          existing.problematic.push(problem);
+        }
+      }
+    } else {
+      self.connections.push(connection);
+    }
+  }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Connection {
   pub kind: ConnectionType, // Dependency, Inheritance, Composition, Usage,
@@ -404,7 +422,7 @@ fn extract_node(
             problematic: is_problematic(dependecy),
           });
         }
-        base.connections.push(Connection {
+        base.add_graph_connection(Connection {
           kind: ConnectionType::Inheritance,
           from: input_id.clone(),
           to: dep_id,
@@ -471,7 +489,7 @@ fn extract_references(
           problematic: is_problematic(input),
         });
       }
-      base.connections.push(Connection {
+      base.add_graph_connection(Connection {
         kind: match r {
           Reference::Read|Reference::Write|Reference::Call => ConnectionType::Usage,
           Reference::TypeRead => ConnectionType::Composition,
@@ -484,12 +502,17 @@ fn extract_references(
       base
     },
     Kind::Function(_) => {
-      //eprintln!("children of function: {:?}", input.children);
+      // Parameter declarations are part of a function's signature, not a
+      // composition owned by its enclosing class. Their type references are
+      // retained in the AST for hierarchy views but do not create graph edges.
       for child in input.children.iter() {
+        if matches!(&child.kind, Kind::Variable(variable) if variable.visibility == "public") {
+          continue;
+        }
         base = extract_references(child, from, code, base, declarations);
       }
       base
-    },
+    }, 
     Kind::Unhandled(_element) => base,
     Kind::Variable(_) => {
       for dependency in &input.dependencies {
