@@ -287,16 +287,34 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
       "init_declarator" => {
         let mut declarators = extract_declaration(&child, code, access_specifier);
         let is_const = check_is_const(field, code);
-        for declarator in &mut declarators {
-          if let Kind::Variable(variable) = &mut declarator.kind {
-            variable.is_const |= is_const;
-            if declarator.dependencies.is_empty() {
-              declarator.dependencies = declaration_type_dependencies(field, code);
-            }
+
+        if let Some(variable_index) = declarators.iter().position(|declarator| {
+          matches!(declarator.kind, Kind::Variable(_))
+        }) {
+          let mut variable = declarators.remove(variable_index);
+          let mut initializer_dependencies = declarators;
+
+          // tree-sitter represents a constructor-style initializer as the
+          // declared variable followed by its expressions. Keep those
+          // expressions owned by the declaration rather than as statements.
+          if initializer_dependencies.first().is_some_and(|initializer| {
+            initializer.name == "static_cast"
+              && matches!(initializer.kind, Kind::Reference(Reference::Call))
+          }) {
+            let mut cast_arguments = initializer_dependencies.split_off(1);
+            initializer_dependencies[0].dependencies.append(&mut cast_arguments);
           }
+
+          if let Kind::Variable(variable_kind) = &mut variable.kind {
+            variable_kind.is_const |= is_const;
+          }
+          variable.dependencies = declaration_type_dependencies(field, code);
+          variable.dependencies.append(&mut initializer_dependencies);
+          children.push(variable);
+        } else {
+          children.append(&mut declarators);
         }
-        children.append(&mut declarators);
-      },
+      }, 
       "pointer_declarator" => {
         let is_function = code[range.start..range.end].contains("(");
         let name = if is_function {

@@ -778,18 +778,18 @@ fn main_ast(fixture: &Path) -> AST {
                               range: 318..329,
                               instructions: vec![],
                           },
+                          AST {
+                              name: "argv".to_string(),
+                              kind: Reference(
+                                  Read,
+                              ),
+                              children: vec![],
+                              dependencies: vec![],
+                              range: 340..344,
+                              instructions: vec![],
+                          },
                         ],
                         range: 330..337,
-                        instructions: vec![],
-                    },
-                    AST {
-                        name: "argv".to_string(),
-                        kind: Reference(
-                            Read,
-                        ),
-                        children: vec![],
-                        dependencies: vec![],
-                        range: 340..344,
                         instructions: vec![],
                     },
                     AST {
