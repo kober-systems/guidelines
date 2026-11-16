@@ -36,7 +36,16 @@ pub fn include_task_ast(fixture: &Path) -> AST {
                                     },
                                 ),
                                 children: vec![],
-                                dependencies: vec![],
+                                dependencies: vec![
+                                    AST {
+                                        name: "int".to_string(),
+                                        kind: Reference(TypeRead),
+                                        children: vec![],
+                                        dependencies: vec![],
+                                        range: 81..84,
+                                        instructions: vec![],
+                                    },
+                                ],
                                 range: 81..87,
                                 instructions: vec![],
                             },
@@ -62,6 +71,22 @@ pub fn include_task_ast(fixture: &Path) -> AST {
                                     },
                                 ],
                                 range: 89..106,
+                                instructions: vec![],
+                            },
+                            AST {
+                                name: "id_".to_string(),
+                                kind: Reference(Write),
+                                children: vec![],
+                                dependencies: vec![],
+                                range: 110..113,
+                                instructions: vec![],
+                            },
+                            AST {
+                                name: "title_".to_string(),
+                                kind: Reference(Write),
+                                children: vec![],
+                                dependencies: vec![],
+                                range: 119..125,
                                 instructions: vec![],
                             },
                         ],
@@ -450,7 +475,7 @@ pub fn include_task_repository_ast(fixture: &Path) -> AST {
                                     },
                                 ),
                                 children: vec![],
-                                dependencies: vec![],
+                                dependencies: vec![type_read("int", 254..257)],
                                 range: 254..260,
                                 instructions: vec![],
                             },
@@ -672,7 +697,7 @@ pub fn main_ast(fixture: &Path) -> AST {
                             },
                         ),
                         children: vec![],
-                        dependencies: vec![],
+                        dependencies: vec![type_read("int", 177..180)],
                         range: 177..185,
                         instructions: vec![],
                     },
@@ -685,7 +710,7 @@ pub fn main_ast(fixture: &Path) -> AST {
                             },
                         ),
                         children: vec![],
-                        dependencies: vec![],
+                        dependencies: vec![type_read("char", 187..191)],
                         range: 187..199,
                         instructions: vec![],
                     },
@@ -1201,7 +1226,7 @@ pub fn task_storage_header_ast(fixture: &Path) -> AST {
                                     },
                                 ),
                                 children: vec![],
-                                dependencies: vec![],
+                                dependencies: vec![type_read("int", 231..234)],
                                 range: 231..237,
                                 instructions: vec![],
                             },
@@ -1592,7 +1617,7 @@ pub fn task_storage_source_ast(fixture: &Path) -> AST {
                             },
                         ),
                         children: vec![],
-                        dependencies: vec![],
+                        dependencies: vec![type_read("int", 396..399)],
                         range: 396..402,
                         instructions: vec![],
                     },
@@ -1958,6 +1983,17 @@ pub fn task_storage_source_ast(fixture: &Path) -> AST {
         range: 0..843,
         instructions: vec![],
     }
+}
+
+fn type_read(name: &str, range: std::ops::Range<usize>) -> AST {
+  AST {
+    name: name.to_string(),
+    kind: Reference(TypeRead),
+    children: vec![],
+    dependencies: vec![],
+    range,
+    instructions: vec![],
+  }
 }
 
 fn read_fixture(fixture: &Path, path: &str) -> String {

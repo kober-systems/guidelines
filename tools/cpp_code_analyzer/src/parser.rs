@@ -472,7 +472,7 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
       "function_declarator" => children.append(&mut extract_parameters(&child, code)),
       ";"|"comment" => (),
       "compound_statement" => children.append(&mut extract_statement(&child, code)),
-      "field_initializer_list" => (),
+      "field_initializer_list" => children.append(&mut extract_field_initializers(&child, code)), 
       "pointer_declarator"|"reference_declarator" => children.append(&mut extract_parameters(&child, code)),
       x if is_literal(x) => (),
       "=" => (),
@@ -499,6 +499,31 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
     range: field.byte_range(),
     instructions: vec![],
   }
+}
+
+fn extract_field_initializers(node: &Node, code: &str) -> Vec<AST> {
+  let mut children = vec![];
+
+  for idx in 0..node.child_count() as u32 {
+    let child = node.child(idx).unwrap();
+    if child.kind() != "field_initializer" {
+      continue;
+    }
+    for initializer_idx in 0..child.child_count() as u32 {
+      let initializer = child.child(initializer_idx).unwrap();
+      if initializer.kind() == "field_identifier" {
+        let range = initializer.byte_range();
+        children.push(AST {
+          name: code[range.start..range.end].to_string(),
+          kind: Kind::Reference(Reference::Write),
+          range,
+          ..AST::default()
+        });
+      }
+    }
+  }
+
+  children
 }
 
 fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
@@ -847,7 +872,7 @@ fn extract_param(node: &Node, code: &str) -> Vec<AST> {
         |"array_declarator" => {
         name = get_variable_name(&child, code);
       }
-      x if is_primitive_type(x) => (),
+      x if is_primitive_type(x) => dependencies.push(type_reference(&child, code)),
       "type_identifier"|"struct_specifier"|"qualified_identifier"
         |"function_declarator" => dependencies.push(AST {
         name: code[range.start..range.end].to_string(),
