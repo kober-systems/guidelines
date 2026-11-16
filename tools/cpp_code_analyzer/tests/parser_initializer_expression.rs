@@ -28,7 +28,7 @@ fn attaches_constructor_initializer_expressions_to_the_declared_variable() {
                     name: "task".to_string(),
                     kind: Variable(Variable {
                         is_const: false,
-                        visibility: "public".to_string(),
+                        visibility: "private".to_string(),
                     }),
                     children: vec![],
                     dependencies: vec![

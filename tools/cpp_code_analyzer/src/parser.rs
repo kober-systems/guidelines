@@ -518,12 +518,14 @@ fn extract_statement(node: &Node, code: &str) -> Vec<AST> {
       x if is_update_expression(x) => children.append(&mut extract_update_expression(&child, code)),
       "call_expression" => children.append(&mut extract_call_expression(&child, code)),
       "field_expression" => children.append(&mut extract_field_expression(&child, code)),
-      "declaration" => children.append(&mut extract_declaration(&child, code, "public")),
+      // Declarations within a function body are implementation details, unlike
+      // function parameters (which retain public visibility in this AST).
+      "declaration" => children.append(&mut extract_declaration(&child, code, "private")),
       "reference_declarator" => children.push(AST {
         name: get_variable_name(&child, code),
         kind: Kind::Variable(Variable {
           is_const: check_is_const(node, code),
-          visibility: "public".to_string(),
+          visibility: "private".to_string(),
         }),
         dependencies: statement_type_dependencies(node, code),
         range,

@@ -763,7 +763,7 @@ fn main_ast(fixture: &Path) -> AST {
                         kind: Variable(
                             Variable {
                                 is_const: true,
-                                visibility: "public".to_string(),
+                                visibility: "private".to_string(),
                             },
                         ),
                         children: vec![],
@@ -880,7 +880,7 @@ fn main_ast(fixture: &Path) -> AST {
                         kind: Variable(
                             Variable {
                                 is_const: true,
-                                visibility: "public".to_string(),
+                                visibility: "private".to_string(),
                             },
                         ),
                         children: vec![],
