@@ -7,12 +7,18 @@ mod cli_task_tracker_ast;
 use cli_task_tracker_ast::*;
 use pretty_assertions::assert_eq;
 
+fn get_sources_sorted(path: &std::path::Path) -> Vec<cpp_code_analyzer::ast::AST> {
+  let mut sources = get_sources(path).unwrap();
+  sources.sort_by(|left, right| left.name.cmp(&right.name));
+  sources
+}
+
 #[test]
 fn parses_cli_task_tracker_into_full_ast_structure() {
   let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli_task_tracker");
 
-  let actual = get_sources(&fixture).unwrap();
-  let expected = vec![
+  let actual = get_sources_sorted(&fixture);
+  let mut expected = vec![
     include_task_ast(&fixture),
     include_task_repository_ast(&fixture),
     test_task_storage_main_ast(&fixture),
@@ -20,6 +26,7 @@ fn parses_cli_task_tracker_into_full_ast_structure() {
     task_storage_header_ast(&fixture),
     task_storage_source_ast(&fixture),
   ];
+  expected.sort_by(|left, right| left.name.cmp(&right.name));
 
   assert_eq!(actual, expected);
 }
