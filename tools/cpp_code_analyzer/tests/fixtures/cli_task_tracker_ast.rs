@@ -1,83 +1,8 @@
-use std::{fs, path::{Path, PathBuf}};
+use std::{fs, path::Path};
 
-use cpp_code_analyzer::{
-  ast::{AST, Class, Function, Kind::*, Reference::*, Variable},
-  input::get_sources,
-};
-use pretty_assertions::assert_eq;
+use cpp_code_analyzer::ast::{AST, Class, Function, Kind::*, Reference::*, Variable};
 
-#[test]
-fn parses_cli_task_tracker_into_full_ast_structure() {
-  let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli_task_tracker");
-
-  let actual = get_sources(&fixture).unwrap();
-  let expected = vec![
-    include_task_ast(&fixture),
-    include_task_repository_ast(&fixture),
-    test_task_storage_main_ast(&fixture),
-    main_ast(&fixture),
-    task_storage_header_ast(&fixture),
-    task_storage_source_ast(&fixture),
-  ];
-
-  assert_eq!(actual, expected);
-}
-
-#[test]
-fn parses_task_header_into_ast_structure() {
-  let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli_task_tracker");
-
-  let actual = get_sources(&fixture.join("include/Task.h")).unwrap();
-
-  assert_eq!(actual, vec![include_task_ast(&fixture)]);
-}
-
-#[test]
-fn parses_task_repository_header_into_ast_structure() {
-  let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli_task_tracker");
-
-  let actual = get_sources(&fixture.join("include/TaskRepository.h")).unwrap();
-
-  assert_eq!(actual, vec![include_task_repository_ast(&fixture)]);
-}
-
-#[test]
-fn parses_task_storage_test_main_into_ast_structure() {
-  let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli_task_tracker");
-
-  let actual = get_sources(&fixture.join("test/test_task_storage/test_main.cpp")).unwrap();
-
-  assert_eq!(actual, vec![test_task_storage_main_ast(&fixture)]);
-}
-
-#[test]
-fn parses_main_source_into_ast_structure() {
-  let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli_task_tracker");
-
-  let actual = get_sources(&fixture.join("src/main.cpp")).unwrap();
-
-  assert_eq!(actual, vec![main_ast(&fixture)]);
-}
-
-#[test]
-fn parses_task_storage_header_into_ast_structure() {
-  let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli_task_tracker");
-
-  let actual = get_sources(&fixture.join("lib/TaskStorage/include/TaskStorage.h")).unwrap();
-
-  assert_eq!(actual, vec![task_storage_header_ast(&fixture)]);
-}
-
-#[test]
-fn parses_task_storage_source_into_ast_structure() {
-  let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/cli_task_tracker");
-
-  let actual = get_sources(&fixture.join("lib/TaskStorage/src/TaskStorage.cpp")).unwrap();
-
-  assert_eq!(actual, vec![task_storage_source_ast(&fixture)]);
-}
-
-fn include_task_ast(fixture: &Path) -> AST {
+pub fn include_task_ast(fixture: &Path) -> AST {
     AST {
         name: fixture.join("include/Task.h").to_string_lossy().into_owned(),
         kind: File {
@@ -382,7 +307,7 @@ fn include_task_ast(fixture: &Path) -> AST {
     }
 }
 
-fn include_task_repository_ast(fixture: &Path) -> AST {
+pub fn include_task_repository_ast(fixture: &Path) -> AST {
     AST {
         name: fixture.join("include/TaskRepository.h").to_string_lossy().into_owned(),
         kind: File {
@@ -588,7 +513,7 @@ fn include_task_repository_ast(fixture: &Path) -> AST {
     }
 }
 
-fn test_task_storage_main_ast(fixture: &Path) -> AST {
+pub fn test_task_storage_main_ast(fixture: &Path) -> AST {
     AST {
         name: fixture.join("test/test_task_storage/test_main.cpp").to_string_lossy().into_owned(),
         kind: File {
@@ -697,7 +622,7 @@ fn test_task_storage_main_ast(fixture: &Path) -> AST {
     }
 }
 
-fn main_ast(fixture: &Path) -> AST {
+pub fn main_ast(fixture: &Path) -> AST {
     AST {
         name: fixture.join("src/main.cpp").to_string_lossy().into_owned(),
         kind: File {
@@ -1146,7 +1071,7 @@ fn main_ast(fixture: &Path) -> AST {
     }
 }
 
-fn task_storage_header_ast(fixture: &Path) -> AST {
+pub fn task_storage_header_ast(fixture: &Path) -> AST {
     AST {
         name: fixture.join("lib/TaskStorage/include/TaskStorage.h").to_string_lossy().into_owned(),
         kind: File {
@@ -1395,7 +1320,7 @@ fn task_storage_header_ast(fixture: &Path) -> AST {
     }
 }
 
-fn task_storage_source_ast(fixture: &Path) -> AST {
+pub fn task_storage_source_ast(fixture: &Path) -> AST {
     AST {
         name: fixture.join("lib/TaskStorage/src/TaskStorage.cpp").to_string_lossy().into_owned(),
         kind: File {
