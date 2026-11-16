@@ -353,9 +353,6 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
       "placeholder_type_specifier"
         |"type_qualifier"|"storage_class_specifier"|"attribute_specifier"
         |"sizeof_expression"|"virtual" => (),
-      "type_identifier" if has_function_declarator(field) && is_virtual_declaration(field, code) => {
-        children.push(type_reference(&child, code));
-      }
       "type_identifier" => (),
       x if is_literal(x) => (),
       "initializer_list" => (),
@@ -373,18 +370,6 @@ fn extract_declaration(field: &Node, code: &str, access_specifier: &str) -> Vec<
   }
 
   children
-}
-
-fn has_function_declarator(node: &Node) -> bool {
-  (0..node.child_count() as u32)
-    .filter_map(|idx| node.child(idx))
-    .any(|child| child.kind() == "function_declarator")
-}
-
-fn is_virtual_declaration(node: &Node, code: &str) -> bool {
-  code[node.byte_range().start..node.byte_range().end]
-    .trim_start()
-    .starts_with("virtual")
 }
 
 fn declaration_type_dependencies(field: &Node, code: &str) -> Vec<AST> {
@@ -464,11 +449,9 @@ fn extract_function(field: &Node, code: &str, access_specifier: &str) -> AST {
           dependencies.push(type_reference(&child, code));
         }
       }
-      "qualified_identifier"|"template_type" => dependencies.push(type_reference(&child, code)),
-      "type_identifier" if !is_virtual_declaration(field, code) => {
+      "qualified_identifier"|"template_type"|"type_identifier" => {
         dependencies.push(type_reference(&child, code));
       }
-      "type_identifier" => (),
       "function_declarator" => children.append(&mut extract_parameters(&child, code)),
       ";"|"comment" => (),
       "compound_statement" => children.append(&mut extract_statement(&child, code)),

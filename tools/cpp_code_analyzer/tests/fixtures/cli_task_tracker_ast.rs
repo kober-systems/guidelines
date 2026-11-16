@@ -362,16 +362,6 @@ pub fn include_task_repository_ast(fixture: &Path) -> AST {
                         instructions: vec![],
                     },
                     AST {
-                        name: "Task".to_string(),
-                        kind: Reference(
-                            TypeRead,
-                        ),
-                        children: vec![],
-                        dependencies: vec![],
-                        range: 152..156,
-                        instructions: vec![],
-                    },
-                    AST {
                         name: "add".to_string(),
                         kind: Function(
                             Function {
@@ -406,7 +396,18 @@ pub fn include_task_repository_ast(fixture: &Path) -> AST {
                                 instructions: vec![],
                             },
                         ],
-                        dependencies: vec![],
+                        dependencies: vec![
+                            AST {
+                                name: "Task".to_string(),
+                                kind: Reference(
+                                    TypeRead,
+                                ),
+                                children: vec![],
+                                dependencies: vec![],
+                                range: 152..156,
+                                instructions: vec![],
+                            },
+                        ],
                         range: 144..184,
                         instructions: vec![],
                     },
