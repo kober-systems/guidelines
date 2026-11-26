@@ -1,0 +1,159 @@
+= General Schema of Software Structure
+Ravioli is based on a general understanding of software structure that
+it considers to be true for every programming language and paradigm.
+
+This document explains the basic concepts. Every project that builds
+on ravioli-core should describe the mapping for that language in more
+detail.
+
+Basically the most important concepts in software are:
+
+* variables
+* namespaces
+* functions
+* types
+* the rlations between those elements
+
+The patterns that form a software system let us rate the architecture
+quality as well as suggest transformations on the structure to improve
+the software quality.
+
+== Variables
+Every peace of data that is written or modified by the program can be
+considered a variable.
+
+Variables can be
+
+* constant (only readable at runtime)
+* mutable (modifiable at runtime).
+
+Variables can be visible either
+
+* only inside their defining namespace (private)
+* inside and outside their current namespace (public) footnote:[In some
+  languages like C++ there is also protected. In the model of ravioli
+  this is also considered public]
+
+== Namespaces
+Nearly everything in a software system can be considered a namespace.
+The idea of namespaces is to control the visibility of variables. This
+alows for abstraction and information hiding and lets us deal with
+complexity.
+
+Here are some examples of namespaces
+
+=== Structs
+Structs are a namespace over a set of variables.
+
+The variables in a struct have normaly the same visibility and
+mutability as the variable that holds them (the instance of the
+struct). In many languages it is possible to control the visibility and
+mutability of the members of a struct further but thats the default in
+most languages.
+
+In some languages it is also possible to define methods/functions for a
+struct. In that case there is no big difference between a struct and a
+class.
+
+=== Enums
+Enums are a namespace over a set of variables. The difference to a
+struct is, that the variables themselfes are constant and only one of
+them can be the value of an enum at a given time.
+
+Some languages allow to define enums that hold struct data in it's
+members. In that case those are efectivly nested namespaces inside the
+enum namespace.
+
+In some languages it is also possible to define methods/functions for
+an enum. In that case there is no big difference between an enum and a
+class.
+
+=== Functions/methods
+Functions are a namespace over a set of variables. Their parameters and
+return values (including exceptions) are public variables, the variables
+they define inside are private variables.
+
+Since functions have other important (and unique) traits they have their
+own section.
+
+=== Classes
+Classes are namespaces over a set of variables and functions.
+
+Normaly languages provide means to control the visibility of their
+members.
+
+=== Namespaces / Modules / Packages
+Namespaces and modules are namespaces in a classical sense. The
+main difference to classes is, that they usualy do not provide any
+instantiation mechanism (so they are in a sense singletons).
+
+== Functions
+Functions are a special type of namespace. In difference to other
+namespaces they actually do something at runtime.
+
+Functions work on data and transform it into other shapes of data. So
+functions can have `Read` and `Write` connections to variables.
+
+Since functions can run during runtime they can be activated by other
+functions. To indicate this functions can have `Call` connections to
+other functions.
+
+During runtime functions can have side effects. It is an important
+property of a function wether it can have side effects or not.
+
+Some examples for functions are:
+
+=== Normal functions
+Functions just as we described them above. Most languages provide a way
+to define them. Functions can sometimes access variables outside their
+own namespace (e.g. global variables).
+
+=== Methods
+Methods are functions that access variables in their parent namespace
+(normaly a class).
+
+=== Closoures
+Closoures are functions that are returned from other functions and
+access variables from the functions that created them.
+
+Since this is effectivly their parent namespace, closoures are
+conceptualy very close to methods (and functions returning closoures are
+conceptualy very close to classes).
+
+== Types
+Types are structure definitions at compile time. Many namespaces can
+also be types.
+
+Types ensure that a defined structure of variables is respected at
+runtime.
+
+Namespaces and variables can define type restrictions with the
+`TypeRead` and `Implements` connections.
+
+Some examples of types are:
+
+=== Primitive Types
+Those are provided by the language. They have a fixed size wich will be
+needed at runtime to use them.
+
+=== Interfaces / Traits
+Interfaces and traits are namespaces that are types as well. They define
+the function signatures that a variable must provide.
+
+=== Structs / Enums
+These namespaces are types as well. They define the data types that a
+variable must provide.
+
+=== Function signatures
+Functions are a type over their input and output variable types (wich
+are their public variables).
+
+=== Classes
+Classes provide a type of their functions and variable types.
+
+=== Dynamic Types
+Some languages do not provide a way to enforce variable types at compile
+time. In fact they use only one type for everything that behaves like an
+enum. The more specific checks are done at runtime but in reality they
+are still using some kind of (very broad) type.
+
